@@ -77,6 +77,7 @@ export default function Home() {
         isOnline={isOnline}
         theme={theme}
         onThemeToggle={toggleTheme}
+        activeTab={activeTab}
       />
       <main className="mainContent fadeIn" key={activeTab}>
         {renderScreen()}

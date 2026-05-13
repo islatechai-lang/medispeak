@@ -77,7 +77,7 @@ export default function PhrasesScreen({ targetLang }) {
               <p className={styles.phraseTl}>{phrase[targetLang] || phrase.en}</p>
             </div>
             <div className={styles.phraseActions}>
-              <SpeakButton text={phrase[targetLang] || phrase.en} langCode={targetLang} size="sm" />
+              <SpeakButton text={phrase[targetLang] || phrase.en} langCode={targetLang} size="sm" audioId={`phrases/${phrase.id}`} />
               <button
                 className={`${styles.favBtn} ${favorites.includes(phrase.id) ? styles.favActive : ''}`}
                 onClick={() => toggleFavorite(phrase.id)}

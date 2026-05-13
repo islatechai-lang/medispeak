@@ -165,3 +165,17 @@
   background: var(--primary-muted);
   transform: rotate(180deg);
 }
+
+.langBarSimple {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.langLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}

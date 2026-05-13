@@ -1,262 +1,184 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { getLangName } from '@/lib/languages';
-import { IconMicrophone, IconStop } from './Icons';
 import SpeakButton from './SpeakButton';
 import LoadingSpinner from './LoadingSpinner';
 import styles from './MediActivation.module.css';
 
-/**
- * MediActivation — "Medi Speak" Wake-Word Voice Command
- * 
- * Continuously listens for the wake phrase "Medi Speak" using the Web Speech API.
- * When triggered, it records the full command, transcribes via Deepgram, 
- * translates via Gemini, and speaks the result via Gemini TTS.
- * 
- * Example: "Medi Speak, tell the nurse I feel dizzy"
- *   → Detects wake word → Captures "tell the nurse I feel dizzy"
- *   → Translates to target language → Speaks aloud
- */
 export default function MediActivation({ sourceLang, targetLang, isActive, onToggle }) {
-  const [status, setStatus] = useState('idle'); // idle | listening | triggered | processing | speaking
+  const [status, setStatus] = useState('idle');
   const [detectedCommand, setDetectedCommand] = useState('');
   const [translation, setTranslation] = useState(null);
   const [error, setError] = useState('');
   const recognitionRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const streamRef = useRef(null);
-  const isActiveRef = useRef(isActive);
 
-  useEffect(() => {
-    isActiveRef.current = isActive;
-  }, [isActive]);
+  const cleanup = useCallback(() => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
+  }, []);
 
-  // Start wake-word listening
-  const startWakeWordListener = useCallback(() => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      setError('Speech recognition not supported. Use Chrome or Edge.');
+  const startListening = useCallback(() => {
+    cleanup();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      setError('Speech recognition not supported. Use Chrome.');
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    const rec = new SR();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    rec.maxAlternatives = 3;
+    recognitionRef.current = rec;
 
-    recognition.onresult = (event) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript.toLowerCase().trim();
-        
-        // Check for wake word "medi speak" or variations
-        if (transcript.includes('medi speak') || transcript.includes('medispeak') || transcript.includes('medi-speak')) {
-          // Extract the command after the wake word
-          const parts = transcript.split(/medi[\s-]?speak/i);
-          const command = parts[parts.length - 1]?.trim();
-          
-          if (event.results[i].isFinal && command) {
-            recognition.stop();
-            handleWakeWordTriggered(command);
-          } else if (event.results[i].isFinal && !command) {
-            // Wake word detected but no command yet — start recording for command
-            recognition.stop();
-            startCommandRecording();
+    rec.onresult = (event) => {
+      for (let i = 0; i < event.results.length; i++) {
+        for (let j = 0; j < event.results[i].length; j++) {
+          const text = event.results[i][j].transcript.toLowerCase().trim();
+          if (text.includes('medi') || text.includes('medic') || text.includes('speak')) {
+            // Extract command after wake word
+            const cmd = text
+              .replace(/^.*?(medi[\s-]?speak|medispeak|medi|speak)\s*[,.]?\s*/i, '')
+              .trim();
+            
+            if (cmd.length > 2) {
+              handleCommand(cmd);
+              return;
+            } else {
+              // Wake word only — start recording for actual command
+              startCommandCapture();
+              return;
+            }
           }
         }
       }
+      // No wake word found, restart
+      if (isActive) restartQuietly();
     };
 
-    recognition.onerror = (e) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') {
-        console.error('Wake word error:', e.error);
-      }
-      // Restart listening after error
-      if (isActiveRef.current) {
-        setTimeout(() => {
-          try { recognition.start(); } catch {}
-        }, 1000);
-      }
+    rec.onerror = () => {
+      if (isActive) restartQuietly();
     };
 
-    recognition.onend = () => {
-      // Auto-restart if still active
-      if (isActiveRef.current && status !== 'triggered' && status !== 'processing') {
-        setTimeout(() => {
-          try { recognition.start(); } catch {}
-        }, 300);
-      }
+    rec.onend = () => {
+      if (isActive && status === 'listening') restartQuietly();
     };
 
-    recognitionRef.current = recognition;
     setStatus('listening');
     setError('');
-    try { recognition.start(); } catch {}
-  }, [status]);
+    setDetectedCommand('');
+    setTranslation(null);
+    try { rec.start(); } catch {}
+  }, [isActive, status]);
 
-  // Stop wake-word listening
-  const stopWakeWordListener = useCallback(() => {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-      recognitionRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setStatus('idle');
-  }, []);
+  const restartQuietly = useCallback(() => {
+    setTimeout(() => {
+      if (!isActive) return;
+      cleanup();
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+      const rec = new SR();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-US';
+      rec.maxAlternatives = 3;
+      recognitionRef.current = rec;
 
-  // Start/stop based on isActive
-  useEffect(() => {
-    if (isActive) {
-      startWakeWordListener();
-    } else {
-      stopWakeWordListener();
-    }
-    return () => stopWakeWordListener();
+      rec.onresult = (event) => {
+        for (let i = 0; i < event.results.length; i++) {
+          for (let j = 0; j < event.results[i].length; j++) {
+            const text = event.results[i][j].transcript.toLowerCase().trim();
+            if (text.includes('medi') || text.includes('speak')) {
+              const cmd = text.replace(/^.*?(medi[\s-]?speak|medispeak|medi|speak)\s*[,.]?\s*/i, '').trim();
+              if (cmd.length > 2) { handleCommand(cmd); return; }
+              else { startCommandCapture(); return; }
+            }
+          }
+        }
+        if (isActive) restartQuietly();
+      };
+      rec.onerror = () => { if (isActive) restartQuietly(); };
+      rec.onend = () => { if (isActive) restartQuietly(); };
+      try { rec.start(); } catch {}
+    }, 500);
   }, [isActive]);
 
-  // Record command after wake word is detected alone
-  const startCommandRecording = async () => {
+  const startCommandCapture = useCallback(() => {
+    cleanup();
     setStatus('triggered');
-    chunksRef.current = [];
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm',
-      });
-      mediaRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        await processCommand(blob);
-      };
-
-      recorder.start(250);
-
-      // Auto-stop after 8 seconds
-      setTimeout(() => {
-        if (recorder.state !== 'inactive') {
-          recorder.stop();
-          stream.getTracks().forEach(t => t.stop());
-        }
-      }, 8000);
-    } catch {
-      setError('Microphone access denied');
-      setStatus('listening');
-    }
-  };
-
-  // Process recorded command via Deepgram
-  const processCommand = async (audioBlob) => {
-    setStatus('processing');
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'command.webm');
-      formData.append('language', sourceLang);
-
-      const sttRes = await fetch('/api/stt', { method: 'POST', body: formData });
-      if (!sttRes.ok) throw new Error('STT failed');
-      
-      const sttData = await sttRes.json();
-      if (sttData.transcript) {
-        await handleWakeWordTriggered(sttData.transcript);
-      } else {
-        setError('No command detected. Try again.');
-        restartListening();
-      }
-    } catch {
-      setError('Command processing failed');
-      restartListening();
-    }
-  };
-
-  // Handle the full command after wake word
-  const handleWakeWordTriggered = async (command) => {
-    // Clean command - remove common prefixes
-    const cleanCmd = command
-      .replace(/^(tell|say|translate|open and tell|open and say)\s+(the\s+)?(nurse|patient|doctor)\s+(that\s+)?/i, '')
-      .replace(/^,?\s*/, '')
-      .trim();
     
-    const finalText = cleanCmd || command;
-    setDetectedCommand(finalText);
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    recognitionRef.current = rec;
+
+    rec.onresult = (event) => {
+      const text = event.results[0]?.[0]?.transcript?.trim();
+      if (text) handleCommand(text);
+      else { setError('No command heard'); if (isActive) setTimeout(startListening, 2000); }
+    };
+    rec.onerror = () => { setError('Could not hear command'); if (isActive) setTimeout(startListening, 2000); };
+    rec.onend = () => {};
+    try { rec.start(); } catch {}
+  }, [isActive]);
+
+  const handleCommand = async (command) => {
+    const clean = command
+      .replace(/^(tell|say|translate|open and tell|open and say)\s+(the\s+)?(nurse|patient|doctor)\s+(that\s+)?/i, '')
+      .replace(/^[,.\s]+/, '')
+      .trim() || command;
+
+    setDetectedCommand(clean);
     setStatus('processing');
 
     try {
-      // Translate
-      const translateRes = await fetch('/api/translate', {
+      const res = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: finalText,
-          sourceLang,
-          targetLang,
-          context: 'urgent nurse-patient voice command communication',
-        }),
+        body: JSON.stringify({ text: clean, sourceLang, targetLang, context: 'urgent voice command' }),
       });
-
-      if (!translateRes.ok) throw new Error('Translation failed');
-      const translateData = await translateRes.json();
-      setTranslation(translateData);
+      if (!res.ok) throw new Error('fail');
+      const data = await res.json();
+      setTranslation(data);
       setStatus('speaking');
 
-      // Auto-play TTS
+      // Auto-play
       try {
         const ttsRes = await fetch('/api/tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: translateData.translation, langCode: targetLang }),
+          body: JSON.stringify({ text: data.translation, langCode: targetLang }),
         });
-
         if (ttsRes.ok) {
-          const audioBlob = await ttsRes.blob();
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioUrl);
-          audio.onended = () => {
-            URL.revokeObjectURL(audioUrl);
-            restartListening();
-          };
+          const blob = await ttsRes.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.onended = () => { URL.revokeObjectURL(url); if (isActive) setTimeout(startListening, 2000); };
           await audio.play();
-        } else {
-          restartListening();
-        }
-      } catch {
-        restartListening();
-      }
+        } else if (isActive) setTimeout(startListening, 2000);
+      } catch { if (isActive) setTimeout(startListening, 2000); }
     } catch {
       setError('Translation failed');
-      restartListening();
+      if (isActive) setTimeout(startListening, 2000);
     }
   };
 
-  const restartListening = () => {
-    setTimeout(() => {
-      if (isActiveRef.current) {
-        setStatus('listening');
-        setDetectedCommand('');
-        setTranslation(null);
-        setError('');
-        startWakeWordListener();
-      } else {
-        setStatus('idle');
-      }
-    }, 3000);
-  };
+  useEffect(() => {
+    if (isActive) startListening();
+    else { cleanup(); setStatus('idle'); }
+    return cleanup;
+  }, [isActive]);
 
-  const statusText = {
+  const labels = {
     idle: 'Medi Activation is off',
     listening: 'Listening for "Medi Speak"...',
-    triggered: 'Command detected — recording...',
-    processing: 'Processing command...',
+    triggered: 'Speak your command now...',
+    processing: 'Translating...',
     speaking: 'Speaking translation...',
   };
 
@@ -268,13 +190,10 @@ export default function MediActivation({ sourceLang, targetLang, isActive, onTog
             <span className={styles.icon}>🎯</span>
             <div>
               <h3 className={styles.title}>Medi Activation</h3>
-              <p className={styles.desc}>Say "Medi Speak" followed by your command</p>
+              <p className={styles.desc}>Say &quot;Medi Speak&quot; + your command</p>
             </div>
           </div>
-          <button
-            className={`${styles.toggleBtn} ${isActive ? styles.active : ''}`}
-            onClick={onToggle}
-          >
+          <button className={`${styles.toggleBtn} ${isActive ? styles.active : ''}`} onClick={onToggle}>
             {isActive ? 'ON' : 'OFF'}
           </button>
         </div>
@@ -283,16 +202,12 @@ export default function MediActivation({ sourceLang, targetLang, isActive, onTog
           <div className={styles.body}>
             <div className={`${styles.statusRow} ${styles[status]}`}>
               <span className={styles.statusDot}></span>
-              <span className={styles.statusText}>{statusText[status]}</span>
+              <span className={styles.statusText}>{labels[status]}</span>
             </div>
 
             {status === 'listening' && (
               <div className={styles.waveContainer}>
-                <div className={styles.wave}></div>
-                <div className={styles.wave}></div>
-                <div className={styles.wave}></div>
-                <div className={styles.wave}></div>
-                <div className={styles.wave}></div>
+                {[0,1,2,3,4].map(i => <div key={i} className={styles.wave}></div>)}
               </div>
             )}
 
@@ -300,8 +215,8 @@ export default function MediActivation({ sourceLang, targetLang, isActive, onTog
 
             {detectedCommand && (
               <div className={styles.commandCard}>
-                <p className={styles.commandLabel}>Detected:</p>
-                <p className={styles.commandText}>"{detectedCommand}"</p>
+                <p className={styles.commandLabel}>You said:</p>
+                <p className={styles.commandText}>&quot;{detectedCommand}&quot;</p>
               </div>
             )}
 
@@ -314,10 +229,7 @@ export default function MediActivation({ sourceLang, targetLang, isActive, onTog
             )}
 
             {error && <p className={styles.error}>{error}</p>}
-
-            <p className={styles.example}>
-              💡 Example: "Medi Speak, I feel dizzy" → auto-translates & speaks
-            </p>
+            <p className={styles.example}>💡 &quot;Medi Speak, I feel dizzy&quot; → auto-translates &amp; speaks</p>
           </div>
         )}
       </div>

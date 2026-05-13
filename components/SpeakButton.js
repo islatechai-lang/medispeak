@@ -3,67 +3,82 @@ import { useState, useRef } from 'react';
 import { IconVolume, IconStop } from './Icons';
 import styles from './SpeakButton.module.css';
 
-export default function SpeakButton({ text, langCode = 'en', size = 'md', label }) {
+/**
+ * SpeakButton — plays audio for given text.
+ * Priority: 1) Pre-generated file from /audio/  2) Gemini TTS API  3) Browser TTS fallback
+ * 
+ * Props:
+ *   audioId  — e.g. "phrases/greeting_1" or "symptoms/head" or "emergency/emg_1"
+ *              If provided, tries /audio/{langCode}/{audioId}.wav first
+ */
+export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef(null);
 
-  const handleClick = async () => {
-    if (isSpeaking) {
-      // Stop current playback
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        URL.revokeObjectURL(audioRef.current.src);
-      }
-      setIsSpeaking(false);
-      return;
+  const stopCurrent = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      if (audioRef.current.src.startsWith('blob:')) URL.revokeObjectURL(audioRef.current.src);
     }
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+  };
 
+  const playAudioUrl = (url) => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => { setIsSpeaking(false); resolve(); };
+      audio.onerror = () => { setIsSpeaking(false); reject(); };
+      audio.play().then(() => setIsSpeaking(true)).catch(reject);
+    });
+  };
+
+  const handleClick = async () => {
+    if (isSpeaking) { stopCurrent(); return; }
     if (!text?.trim()) return;
 
     setIsLoading(true);
     try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.slice(0, 500), langCode }),
-      });
-
-      if (!res.ok) {
-        throw new Error('TTS request failed');
+      // 1) Try pre-generated audio file
+      if (audioId && langCode !== 'en') {
+        const fileUrl = `/audio/${langCode}/${audioId}.wav`;
+        try {
+          const check = await fetch(fileUrl, { method: 'HEAD' });
+          if (check.ok) {
+            await playAudioUrl(fileUrl);
+            setIsLoading(false);
+            return;
+          }
+        } catch {}
       }
 
-      const audioBlob = await res.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      
-      audio.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(audioUrl);
-      };
-      
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      await audio.play();
-      setIsSpeaking(true);
-    } catch (err) {
-      console.error('TTS error:', err);
-      // Fallback to browser TTS
+      // 2) Try Gemini TTS API
       try {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = langCode === 'ceb' ? 'fil' : langCode === 'tl' ? 'fil' : langCode;
-        utterance.onend = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-        setIsSpeaking(true);
-      } catch {
-        setIsSpeaking(false);
-      }
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text.slice(0, 500), langCode }),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          await playAudioUrl(url);
+          setIsLoading(false);
+          return;
+        }
+      } catch {}
+
+      // 3) Fallback: browser TTS
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langCode === 'ceb' || langCode === 'tl' ? 'fil' : langCode;
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+      setIsSpeaking(true);
+    } catch {
+      setIsSpeaking(false);
     } finally {
       setIsLoading(false);
     }

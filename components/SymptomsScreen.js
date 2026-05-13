@@ -68,7 +68,7 @@ export default function SymptomsScreen({ targetLang }) {
                   <p className={styles.resultTranslated}>{getTranslatedText(selectedSymptom)}</p>
                 </div>
               </div>
-              <SpeakButton text={getTranslatedText(selectedSymptom)} langCode={targetLang} size="lg" label="Speak" />
+              <SpeakButton text={getTranslatedText(selectedSymptom)} langCode={targetLang} size="lg" label="Speak" audioId={`symptoms/${selectedSymptom.id}`} />
             </div>
           )}
         </div>
