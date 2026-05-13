@@ -78,18 +78,36 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = langCode === 'ceb' || langCode === 'tl' ? 'fil' : langCode;
       
+      let ttsTimeout;
+      
       utterance.onstart = () => {
+        clearTimeout(ttsTimeout);
         setIsSpeaking(true);
         setIsLoading(false);
       };
       
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => { setIsSpeaking(false); setIsLoading(false); };
+      utterance.onend = () => {
+        clearTimeout(ttsTimeout);
+        setIsSpeaking(false);
+      };
+      
+      utterance.onerror = () => {
+        clearTimeout(ttsTimeout);
+        setIsSpeaking(false);
+        setIsLoading(false);
+      };
       
       window.speechSynthesis.speak(utterance);
       
-      // Fallback in case onstart doesn't fire immediately
-      setTimeout(() => setIsLoading(false), 500);
+      // Safety timeout: if TTS engine hangs (common when offline without local voices)
+      ttsTimeout = setTimeout(() => {
+        if (!isSpeaking) {
+          window.speechSynthesis?.cancel();
+          setIsSpeaking(false);
+          setIsLoading(false);
+        }
+      }, 2000);
+      
     } catch {
       setIsSpeaking(false);
       setIsLoading(false);

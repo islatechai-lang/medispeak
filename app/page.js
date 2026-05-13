@@ -9,6 +9,7 @@ import PhrasesScreen from '@/components/PhrasesScreen';
 import EducationScreen from '@/components/EducationScreen';
 import HistoryScreen from '@/components/HistoryScreen';
 import EmergencyPanel from '@/components/EmergencyPanel';
+import OfflineModal from '@/components/OfflineModal';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('translate');
@@ -99,6 +100,8 @@ export default function Home() {
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
       />
+
+      <OfflineModal isOnline={isOnline} />
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
