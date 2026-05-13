@@ -18,10 +18,14 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
   // Auto-play when text/audioId changes
   useEffect(() => {
     if (autoPlay && text) {
+      setIsLoading(true); // Start spinning immediately
       const timer = setTimeout(() => {
         handleClick();
       }, 100);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        setIsLoading(false);
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, audioId, autoPlay]);
