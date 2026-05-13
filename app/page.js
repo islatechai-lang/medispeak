@@ -95,6 +95,7 @@ export default function Home() {
 
       <EmergencyPanel
         targetLang={targetLang}
+        onTargetChange={setTargetLang}
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
       />

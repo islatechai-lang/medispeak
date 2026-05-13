@@ -136,6 +136,12 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
         onToggle={() => setMediActive(!mediActive)}
       />
 
+      <div className={styles.introWrap}>
+        <p className={styles.introText}>
+          Speak directly into the microphone for instant translation. You can toggle auto-translate for a faster conversation.
+        </p>
+      </div>
+
       <div className={styles.micSection}>
         <p className={styles.instruction}>
           {isListening ? `Recording in ${getLangName(sourceLang)}...` : isProcessing ? 'Processing speech...' : 'Tap to start speaking'}

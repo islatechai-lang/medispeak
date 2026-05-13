@@ -6,10 +6,6 @@ import styles from './SpeakButton.module.css';
 /**
  * SpeakButton — plays audio for given text.
  * Priority: 1) Pre-generated file from /audio/  2) Gemini TTS API  3) Browser TTS fallback
- * 
- * Props:
- *   audioId  — e.g. "phrases/greeting_1" or "symptoms/head" or "emergency/emg_1"
- *              If provided, tries /audio/{langCode}/{audioId}.wav first
  */
 export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -24,6 +20,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     }
     window.speechSynthesis?.cancel();
     setIsSpeaking(false);
+    setIsLoading(false);
   };
 
   const playAudioUrl = (url) => {
@@ -31,8 +28,15 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
       const audio = new Audio(url);
       audioRef.current = audio;
       audio.onended = () => { setIsSpeaking(false); resolve(); };
-      audio.onerror = () => { setIsSpeaking(false); reject(); };
-      audio.play().then(() => setIsSpeaking(true)).catch(reject);
+      audio.onerror = () => { setIsSpeaking(false); setIsLoading(false); reject(); };
+      
+      audio.play().then(() => {
+        setIsSpeaking(true);
+        setIsLoading(false);
+      }).catch((err) => {
+        setIsLoading(false);
+        reject(err);
+      });
     });
   };
 
@@ -41,45 +45,53 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     if (!text?.trim()) return;
 
     setIsLoading(true);
-    try {
-      // 1) Try pre-generated audio file
-      if (audioId && langCode !== 'en') {
-        const fileUrl = `/audio/${langCode}/${audioId}.wav`;
-        try {
-          const check = await fetch(fileUrl, { method: 'HEAD' });
-          if (check.ok) {
-            await playAudioUrl(fileUrl);
-            setIsLoading(false);
-            return;
-          }
-        } catch {}
-      }
 
-      // 2) Try Gemini TTS API
+    // 1) Try pre-generated audio file
+    if (audioId && langCode !== 'en') {
+      const fileUrl = `/audio/${langCode}/${audioId}.wav`;
       try {
-        const res = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text.slice(0, 500), langCode }),
-        });
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          await playAudioUrl(url);
-          setIsLoading(false);
+        const check = await fetch(fileUrl, { method: 'HEAD' });
+        if (check.ok) {
+          playAudioUrl(fileUrl).catch(() => {});
           return;
         }
       } catch {}
+    }
 
-      // 3) Fallback: browser TTS
+    // 2) Try Gemini TTS API
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.slice(0, 500), langCode }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        playAudioUrl(url).catch(() => {});
+        return;
+      }
+    } catch {}
+
+    // 3) Fallback: browser TTS
+    try {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = langCode === 'ceb' || langCode === 'tl' ? 'fil' : langCode;
+      
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        setIsLoading(false);
+      };
+      
       utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => { setIsSpeaking(false); setIsLoading(false); };
+      
       window.speechSynthesis.speak(utterance);
-      setIsSpeaking(true);
+      
+      // Fallback in case onstart doesn't fire immediately
+      setTimeout(() => setIsLoading(false), 500);
     } catch {
       setIsSpeaking(false);
-    } finally {
       setIsLoading(false);
     }
   };

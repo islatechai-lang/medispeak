@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { LANGUAGES } from '@/lib/languages';
 import SpeakButton from './SpeakButton';
 import styles from './EmergencyPanel.module.css';
 
@@ -14,7 +15,7 @@ const EMERGENCY_PHRASES = [
   { id: 'emg_8', en: 'Are you allergic to any medicine?', tl: 'May allergy ka ba sa gamot?', ceb: 'Naa bay allergy sa tambal?', ilo: 'Adda kadi alerhiyam iti agas?', war: 'May allergy ka ba ha tambal?' },
 ];
 
-export default function EmergencyPanel({ targetLang, isOpen, onClose }) {
+export default function EmergencyPanel({ targetLang, onTargetChange, isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
@@ -29,6 +30,19 @@ export default function EmergencyPanel({ targetLang, isOpen, onClose }) {
             </div>
           </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className={styles.langRow}>
+          <span className={styles.langLabel}>Patient Language:</span>
+          <select
+            className={styles.langSelect}
+            value={targetLang}
+            onChange={(e) => onTargetChange(e.target.value)}
+            aria-label="Patient language"
+          >
+            {LANGUAGES.map(l => (
+              <option key={l.code} value={l.code}>{l.flag} {l.name}</option>
+            ))}
+          </select>
         </div>
         <div className={styles.list}>
           {EMERGENCY_PHRASES.map((phrase, i) => (
