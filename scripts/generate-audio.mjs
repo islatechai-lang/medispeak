@@ -70,14 +70,9 @@ function addWavHeader(pcmData, sampleRate = 24000, numChannels = 1, bitsPerSampl
 
 // ─── TTS Generator ──────────────────────────────────────────
 async function generateAudio(text, outputPath) {
-  if (existsSync(outputPath)) {
-    console.log(`  ⏭  Already exists: ${outputPath.split('audio')[1]}`);
-    return true;
-  }
-
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-tts-preview',
+      model: 'gemini-2.5-pro-preview-tts',
       contents: text,
       config: {
         responseModalities: ['AUDIO'],
@@ -123,6 +118,25 @@ async function main() {
   }
 
   let total = 0, success = 0;
+  let apiCallsThisMinute = 0;
+
+  async function safeGenerate(text, path) {
+    if (existsSync(path)) {
+      console.log(`  ⏭  Already exists: ${path.split('audio')[1]}`);
+      return true;
+    }
+
+    if (apiCallsThisMinute >= 5) {
+      console.log('\n  ⏳ Rate limit safety: Pausing for 60 seconds (Free tier limit is ~15 RPM)...');
+      await sleep(61000);
+      apiCallsThisMinute = 0;
+    }
+
+    const res = await generateAudio(text, path);
+    apiCallsThisMinute++;
+    await sleep(2000); // 2 second delay between calls to be safe
+    return res;
+  }
 
   // ── Emergency Phrases ──
   console.log('\n🚨 Emergency Phrases\n');
@@ -131,8 +145,7 @@ async function main() {
       if (!phrase[lang]) continue;
       total++;
       const path = join(AUDIO_DIR, lang, 'emergency', `${phrase.id}.wav`);
-      if (await generateAudio(phrase[lang], path)) success++;
-      await sleep(800); // Rate limit
+      if (await safeGenerate(phrase[lang], path)) success++;
     }
   }
 
@@ -143,8 +156,7 @@ async function main() {
       if (!phrase[lang]) continue;
       total++;
       const path = join(AUDIO_DIR, lang, 'phrases', `${phrase.id}.wav`);
-      if (await generateAudio(phrase[lang], path)) success++;
-      await sleep(800);
+      if (await safeGenerate(phrase[lang], path)) success++;
     }
   }
 
@@ -156,8 +168,7 @@ async function main() {
         if (!symptom[lang]) continue;
         total++;
         const path = join(AUDIO_DIR, lang, 'symptoms', `${symptom.id}.wav`);
-        if (await generateAudio(symptom[lang], path)) success++;
-        await sleep(800);
+        if (await safeGenerate(symptom[lang], path)) success++;
       }
     }
   }

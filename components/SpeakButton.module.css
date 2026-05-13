@@ -23,6 +23,19 @@
   color: var(--danger);
 }
 
+.speakBtn.error {
+  background: #fff0f0;
+  border-color: #fecaca;
+  color: #ef4444;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
 .speakBtn.loading {
   opacity: 0.7;
   cursor: wait;

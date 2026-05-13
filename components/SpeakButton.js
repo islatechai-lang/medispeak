@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { IconVolume, IconStop } from './Icons';
+import { IconVolume, IconStop, IconAlert } from './Icons';
 import styles from './SpeakButton.module.css';
 
 // Global reference to stop the currently playing audio across all SpeakButton instances
@@ -13,6 +13,7 @@ let globalStopCurrent = null;
 export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId, autoPlay = false }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const audioRef = useRef(null);
 
   // Auto-play when text/audioId changes
@@ -52,6 +53,11 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     if (globalStopCurrent === stopCurrent) {
       globalStopCurrent = null;
     }
+  };
+
+  const showError = () => {
+    setIsError(true);
+    setTimeout(() => setIsError(false), 2000);
   };
 
   const playAudioUrl = (url) => {
@@ -165,6 +171,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
           window.speechSynthesis?.cancel();
           setIsSpeaking(false);
           setIsLoading(false);
+          showError();
           if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
         }
       }, 2000);
@@ -172,28 +179,31 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     } catch {
       setIsSpeaking(false);
       setIsLoading(false);
+      showError();
       if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
     }
   };
 
   return (
     <button
-      className={`${styles.speakBtn} ${styles[size]} ${isSpeaking ? styles.active : ''} ${isLoading ? styles.loading : ''}`}
-      onClick={handleClick}
-      disabled={isLoading}
+      className={`${styles.speakBtn} ${styles[size]} ${isSpeaking ? styles.active : ''} ${isLoading ? styles.loading : ''} ${isError ? styles.error : ''}`}
+      onClick={() => handleClick()}
+      disabled={isLoading || isError}
       title={isSpeaking ? 'Stop' : 'Listen'}
       aria-label={isSpeaking ? 'Stop speaking' : `Listen in ${langCode}`}
     >
       <span className={styles.icon}>
         {isLoading ? (
           <span className={styles.spinner}></span>
+        ) : isError ? (
+          <IconAlert size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} />
         ) : isSpeaking ? (
           <IconStop size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} />
         ) : (
           <IconVolume size={size === 'sm' ? 14 : size === 'lg' ? 18 : 16} />
         )}
       </span>
-      {label && <span className={styles.label}>{label}</span>}
+      {label && <span className={styles.label}>{isError ? 'Failed' : label}</span>}
     </button>
   );
 }
