@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { IconVolume, IconStop } from './Icons';
 import styles from './SpeakButton.module.css';
 
@@ -7,10 +7,22 @@ import styles from './SpeakButton.module.css';
  * SpeakButton — plays audio for given text.
  * Priority: 1) Pre-generated file from /audio/  2) Gemini TTS API  3) Browser TTS fallback
  */
-export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId }) {
+export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId, autoPlay = false }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef(null);
+
+  // Auto-play when text/audioId changes
+  useEffect(() => {
+    if (autoPlay && text) {
+      // Small timeout to ensure UI updates before audio plays
+      const timer = setTimeout(() => {
+        handleClick();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, audioId, autoPlay]);
 
   const stopCurrent = () => {
     if (audioRef.current) {
