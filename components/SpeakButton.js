@@ -115,6 +115,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     }
 
     // 2) Try Gemini TTS API
+    setIsLoading(true); // Re-enable spinner for API fallback
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
@@ -130,6 +131,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     } catch {}
 
     // 3) Fallback: browser TTS
+    setIsLoading(true); // Re-enable spinner for browser fallback
     try {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = langCode === 'ceb' || langCode === 'tl' ? 'fil' : langCode;
