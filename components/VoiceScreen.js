@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { getLangName } from '@/lib/languages';
 import { IconMicrophone, IconStop } from './Icons';
+import MediActivation from './MediActivation';
 import SpeakButton from './SpeakButton';
 import LoadingSpinner from './LoadingSpinner';
 import styles from './VoiceScreen.module.css';
@@ -13,6 +14,7 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
   const [translation, setTranslation] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [autoTranslate, setAutoTranslate] = useState(true);
+  const [mediActive, setMediActive] = useState(false);
   const [error, setError] = useState('');
 
   const mediaRecorderRef = useRef(null);
@@ -52,7 +54,7 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
         await processAudio(audioBlob);
       };
 
-      mediaRecorder.start(250); // Collect in 250ms chunks
+      mediaRecorder.start(250);
       setIsListening(true);
     } catch (err) {
       console.error('Mic error:', err);
@@ -78,11 +80,7 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
       formData.append('audio', audioBlob, 'recording.webm');
       formData.append('language', sourceLang);
 
-      const res = await fetch('/api/stt', {
-        method: 'POST',
-        body: formData,
-      });
-
+      const res = await fetch('/api/stt', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('STT failed');
 
       const data = await res.json();
@@ -124,15 +122,20 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
   };
 
   const handleToggleMic = () => {
-    if (isListening) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (isListening) stopRecording();
+    else startRecording();
   };
 
   return (
     <div className={styles.screen}>
+      {/* Medi Activation — Wake Word Feature */}
+      <MediActivation
+        sourceLang={sourceLang}
+        targetLang={targetLang}
+        isActive={mediActive}
+        onToggle={() => setMediActive(!mediActive)}
+      />
+
       <div className={styles.micSection}>
         <p className={styles.instruction}>
           {isListening ? `Recording in ${getLangName(sourceLang)}...` : isProcessing ? 'Processing speech...' : 'Tap to start speaking'}
