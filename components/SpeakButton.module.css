@@ -1,0 +1,50 @@
+.speakBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  background: var(--bg-surface);
+  color: var(--primary);
+}
+
+.speakBtn:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+}
+
+.speakBtn.active {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.speakBtn.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.sm { padding: 5px 10px; font-size: 0.75rem; }
+.md { padding: 7px 14px; font-size: 0.82rem; }
+.lg { padding: 10px 18px; font-size: 0.9rem; }
+
+.icon { display: flex; align-items: center; }
+.label { white-space: nowrap; }
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

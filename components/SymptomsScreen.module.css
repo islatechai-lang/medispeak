@@ -1,0 +1,152 @@
+.screen { display: flex; flex-direction: column; gap: 16px; }
+
+.intro {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
+  font-weight: 500;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.categoryCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-xs);
+}
+
+.categoryCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--cat-color);
+  box-shadow: var(--shadow-md);
+}
+
+.catIcon { font-size: 2rem; }
+
+.catName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.symptomView { display: flex; flex-direction: column; gap: 14px; }
+
+.backBtn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.backBtn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.catTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.symptomGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.symptomCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 8px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-light);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.symptomCard:hover {
+  border-color: var(--primary);
+  background: var(--primary-subtle);
+  transform: scale(1.02);
+}
+
+.symptomCard.selected {
+  border-color: var(--primary);
+  background: var(--primary-subtle);
+  box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+
+.symptomIcon { font-size: 1.5rem; }
+
+.symptomName {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-align: center;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.resultCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--primary);
+  background: var(--primary-subtle);
+  animation: fadeUp 0.25s ease;
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.resultIcon { font-size: 1.8rem; }
+
+.resultEn {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 2px;
+}
+
+.resultTranslated {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

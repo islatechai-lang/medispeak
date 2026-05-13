@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+/* ═══════════════════════════════════════
+   LIGHT THEME — Aesthetic Mint Green
+   ═══════════════════════════════════════ */
+:root {
+  --primary: #16A34A;
+  --primary-light: #22C55E;
+  --primary-dark: #15803D;
+  --primary-subtle: rgba(22, 163, 74, 0.07);
+  --primary-muted: rgba(22, 163, 74, 0.14);
+
+  --accent: #0D9488;
+  --accent-light: #14B8A6;
+  --accent-subtle: rgba(13, 148, 136, 0.07);
+
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --success: #10B981;
+
+  --bg-base: #F0FDF4;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #F0FDF4;
+  --bg-input: #F0FDF4;
+  --bg-overlay: rgba(0, 0, 0, 0.35);
+
+  --border: #D1FAE5;
+  --border-light: #ECFDF5;
+  --border-focus: var(--primary);
+
+  --text-primary: #052E16;
+  --text-secondary: #166534;
+  --text-muted: #6B7280;
+  --text-inverse: #FFFFFF;
+
+  --shadow-xs: 0 1px 2px rgba(22, 163, 74, 0.04);
+  --shadow-sm: 0 1px 3px rgba(22, 163, 74, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 8px rgba(22, 163, 74, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 25px rgba(22, 163, 74, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', 'Inter', sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --header-bg: rgba(255, 255, 255, 0.92);
+
+  color-scheme: light;
+}
+
+/* ═══════════════════════════════════════
+   DARK THEME — Deep Forest
+   ═══════════════════════════════════════ */
+[data-theme="dark"] {
+  --primary: #22C55E;
+  --primary-light: #4ADE80;
+  --primary-dark: #16A34A;
+  --primary-subtle: rgba(34, 197, 94, 0.1);
+  --primary-muted: rgba(34, 197, 94, 0.18);
+
+  --accent: #14B8A6;
+  --accent-light: #2DD4BF;
+  --accent-subtle: rgba(20, 184, 166, 0.1);
+
+  --bg-base: #09120E;
+  --bg-surface: #111C16;
+  --bg-elevated: #172520;
+  --bg-hover: #1C2E25;
+  --bg-input: #152019;
+
+  --border: #1E3A2B;
+  --border-light: #162D21;
+
+  --text-primary: #ECFDF5;
+  --text-secondary: #A7F3D0;
+  --text-muted: #5C7A6B;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.2);
+
+  --nav-bg: rgba(9, 18, 14, 0.94);
+  --header-bg: rgba(9, 18, 14, 0.94);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+
+::selection {
+  background: var(--primary-muted);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button { cursor: pointer; font-family: inherit; }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════ */
+.appContainer {
+  position: relative;
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 20px 16px;
+  padding-bottom: 88px;
+  overflow-y: auto;
+}
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
+.fadeIn {
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════ */
+@media (min-width: 640px) {
+  .appContainer {
+    border-left: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
+  }
+}

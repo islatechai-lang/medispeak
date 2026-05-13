@@ -1,0 +1,129 @@
+.screen { display: flex; flex-direction: column; gap: 14px; }
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.searchIcon { font-size: 0.9rem; opacity: 0.4; }
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.searchInput::placeholder { color: var(--text-muted); }
+
+.categoryScroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.categoryScroll::-webkit-scrollbar { display: none; }
+
+.catPill {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.catPill:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.catPill.activePill {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.phraseList { display: flex; flex-direction: column; gap: 8px; }
+
+.phraseCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-xs);
+}
+
+.phraseCard:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.phraseContent { flex: 1; min-width: 0; }
+
+.phraseEn {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 3px;
+  line-height: 1.4;
+}
+
+.phraseTl {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.phraseActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.favBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favBtn:hover { background: var(--bg-hover); }
+.favBtn.favActive { color: var(--warning); }
+
+.empty {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
