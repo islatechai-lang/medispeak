@@ -19,7 +19,7 @@ export default function SymptomsScreen({ targetLang }) {
 
   return (
     <div className={styles.screen}>
-      <p className={styles.intro}>Tap a category, then select a symptom to communicate with the patient.</p>
+      <p className={styles.intro}>Hand the device to the patient. Please tap a category, then select your symptom to show the nurse.</p>
 
       {!activeCategory ? (
         <div className={styles.categoryGrid}>

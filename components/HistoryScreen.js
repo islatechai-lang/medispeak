@@ -99,6 +99,13 @@ export default function HistoryScreen() {
 
   return (
     <div className={styles.screen}>
+      <div className={styles.introBox}>
+        <h2 className={styles.introTitle}>Patient Directory</h2>
+        <p className={styles.introText}>
+          Save profiles for recurring patients. This lets you quickly remember their preferred language, age, and any specific nursing notes or allergies. All data is securely saved only on your local device.
+        </p>
+      </div>
+
       <div className={styles.topBar}>
         <div className={styles.searchWrap}>
           <span className={styles.searchIcon}><IconSearch size={15} /></span>

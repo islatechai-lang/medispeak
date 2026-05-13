@@ -1,5 +1,27 @@
 .screen { display: flex; flex-direction: column; gap: 14px; }
 
+.introBox {
+  background: var(--primary-subtle);
+  border: 1px solid var(--primary-light);
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 4px;
+}
+
+.introTitle {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  color: var(--primary);
+  font-family: var(--font-heading);
+}
+
+.introText {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .topBar { display: flex; align-items: center; gap: 10px; }
 
 .searchWrap {
