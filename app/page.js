@@ -8,6 +8,7 @@ import SymptomsScreen from '@/components/SymptomsScreen';
 import PhrasesScreen from '@/components/PhrasesScreen';
 import EducationScreen from '@/components/EducationScreen';
 import HistoryScreen from '@/components/HistoryScreen';
+import EmergencyPanel from '@/components/EmergencyPanel';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('translate');
@@ -15,9 +16,9 @@ export default function Home() {
   const [targetLang, setTargetLang] = useState('ceb');
   const [isOnline, setIsOnline] = useState(true);
   const [theme, setTheme] = useState('light');
+  const [showEmergency, setShowEmergency] = useState(false);
 
   useEffect(() => {
-    // Load saved theme or detect system preference
     const saved = localStorage.getItem('medispeak_theme');
     if (saved) {
       setTheme(saved);
@@ -80,6 +81,23 @@ export default function Home() {
       <main className="mainContent fadeIn" key={activeTab}>
         {renderScreen()}
       </main>
+
+      {/* Emergency floating button */}
+      <button
+        className="emergencyFab"
+        onClick={() => setShowEmergency(true)}
+        aria-label="Emergency phrases"
+        title="Emergency Phrases"
+      >
+        🚨
+      </button>
+
+      <EmergencyPanel
+        targetLang={targetLang}
+        isOpen={showEmergency}
+        onClose={() => setShowEmergency(false)}
+      />
+
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
