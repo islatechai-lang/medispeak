@@ -20,7 +20,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     if (autoPlay && text) {
       setIsLoading(true); // Start spinning immediately
       const timer = setTimeout(() => {
-        handleClick();
+        handleClick(true);
       }, 100);
       return () => {
         clearTimeout(timer);
@@ -87,10 +87,10 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     });
   };
 
-  const handleClick = async () => {
+  const handleClick = async (forcePlay = false) => {
     if (isSpeaking) { 
       stopCurrent(); 
-      return; 
+      if (!forcePlay) return; // Only abort if it was a manual toggle click
     }
     
     if (!text?.trim()) return;
