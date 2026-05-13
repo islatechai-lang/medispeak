@@ -3,6 +3,9 @@ import { useState, useRef, useEffect } from 'react';
 import { IconVolume, IconStop } from './Icons';
 import styles from './SpeakButton.module.css';
 
+// Global reference to stop the currently playing audio across all SpeakButton instances
+let globalStopCurrent = null;
+
 /**
  * SpeakButton — plays audio for given text.
  * Priority: 1) Pre-generated file from /audio/  2) Gemini TTS API  3) Browser TTS fallback
@@ -15,7 +18,6 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
   // Auto-play when text/audioId changes
   useEffect(() => {
     if (autoPlay && text) {
-      // Small timeout to ensure UI updates before audio plays
       const timer = setTimeout(() => {
         handleClick();
       }, 100);
@@ -24,37 +26,76 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, audioId, autoPlay]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isSpeaking) stopCurrent();
+    };
+  }, [isSpeaking]);
+
   const stopCurrent = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      if (audioRef.current.src.startsWith('blob:')) URL.revokeObjectURL(audioRef.current.src);
+      if (audioRef.current.src.startsWith('blob:')) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
     }
     window.speechSynthesis?.cancel();
     setIsSpeaking(false);
     setIsLoading(false);
+    
+    if (globalStopCurrent === stopCurrent) {
+      globalStopCurrent = null;
+    }
   };
 
   const playAudioUrl = (url) => {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => { setIsSpeaking(false); resolve(); };
-      audio.onerror = () => { setIsSpeaking(false); setIsLoading(false); reject(); };
       
-      audio.play().then(() => {
+      // onplaying guarantees the browser actually started outputting sound
+      audio.onplaying = () => {
         setIsSpeaking(true);
         setIsLoading(false);
-      }).catch((err) => {
+      };
+      
+      audio.onended = () => { 
+        setIsSpeaking(false); 
+        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
+        resolve(); 
+      };
+      
+      audio.onerror = (err) => { 
+        setIsSpeaking(false); 
+        setIsLoading(false); 
+        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
+        reject(err); 
+      };
+      
+      audio.play().catch((err) => {
         setIsLoading(false);
+        setIsSpeaking(false);
+        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
         reject(err);
       });
     });
   };
 
   const handleClick = async () => {
-    if (isSpeaking) { stopCurrent(); return; }
+    if (isSpeaking) { 
+      stopCurrent(); 
+      return; 
+    }
+    
     if (!text?.trim()) return;
+
+    // Stop any other currently playing SpeakButton globally
+    if (globalStopCurrent) {
+      globalStopCurrent();
+    }
+    globalStopCurrent = stopCurrent;
 
     setIsLoading(true);
 
@@ -62,8 +103,6 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     if (audioId && langCode !== 'en') {
       const fileUrl = `/audio/${langCode}/${audioId}.wav`;
       try {
-        // Do not use fetch() here because it fails when offline even if the file is in browser cache.
-        // new Audio() will automatically use the browser's disk cache.
         await playAudioUrl(fileUrl);
         return; // If successful, exit.
       } catch (e) {
@@ -81,7 +120,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        playAudioUrl(url).catch(() => {});
+        await playAudioUrl(url);
         return;
       }
     } catch {}
@@ -102,12 +141,14 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
       utterance.onend = () => {
         clearTimeout(ttsTimeout);
         setIsSpeaking(false);
+        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
       };
       
       utterance.onerror = () => {
         clearTimeout(ttsTimeout);
         setIsSpeaking(false);
         setIsLoading(false);
+        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
       };
       
       window.speechSynthesis.speak(utterance);
@@ -118,12 +159,14 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
           window.speechSynthesis?.cancel();
           setIsSpeaking(false);
           setIsLoading(false);
+          if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
         }
       }, 2000);
       
     } catch {
       setIsSpeaking(false);
       setIsLoading(false);
+      if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
     }
   };
 
