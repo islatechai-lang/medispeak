@@ -50,12 +50,13 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     if (audioId && langCode !== 'en') {
       const fileUrl = `/audio/${langCode}/${audioId}.wav`;
       try {
-        const check = await fetch(fileUrl, { method: 'HEAD' });
-        if (check.ok) {
-          playAudioUrl(fileUrl).catch(() => {});
-          return;
-        }
-      } catch {}
+        // Do not use fetch() here because it fails when offline even if the file is in browser cache.
+        // new Audio() will automatically use the browser's disk cache.
+        await playAudioUrl(fileUrl);
+        return; // If successful, exit.
+      } catch (e) {
+        // File not found or not cached. Proceed to fallback.
+      }
     }
 
     // 2) Try Gemini TTS API
