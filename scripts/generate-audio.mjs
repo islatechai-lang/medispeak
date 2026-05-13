@@ -126,16 +126,23 @@ async function main() {
       return true;
     }
 
-    if (apiCallsThisMinute >= 5) {
-      console.log('\n  ⏳ Rate limit safety: Pausing for 60 seconds (Free tier limit is ~15 RPM)...');
-      await sleep(61000);
-      apiCallsThisMinute = 0;
-    }
-
     const res = await generateAudio(text, path);
-    apiCallsThisMinute++;
-    await sleep(2000); // 2 second delay between calls to be safe
+    console.log('  ⏳ Steady rate-limit: Sleeping 10s...');
+    await sleep(10000); // Steady 6 RPM (well under the 15 RPM limit)
     return res;
+  }
+
+  // ── Symptoms ──
+  console.log('\n🩺 Symptoms (PRIORITY)\n');
+  for (const [category, symptoms] of Object.entries(SYMPTOMS_DATA.SYMPTOMS)) {
+    for (const symptom of symptoms) {
+      for (const lang of LANGUAGES) {
+        if (!symptom[lang]) continue;
+        total++;
+        const path = join(AUDIO_DIR, lang, 'symptoms', `${symptom.id}.wav`);
+        if (await safeGenerate(symptom[lang], path)) success++;
+      }
+    }
   }
 
   // ── Emergency Phrases ──
@@ -157,19 +164,6 @@ async function main() {
       total++;
       const path = join(AUDIO_DIR, lang, 'phrases', `${phrase.id}.wav`);
       if (await safeGenerate(phrase[lang], path)) success++;
-    }
-  }
-
-  // ── Symptoms ──
-  console.log('\n🩺 Symptoms\n');
-  for (const [category, symptoms] of Object.entries(SYMPTOMS_DATA.SYMPTOMS)) {
-    for (const symptom of symptoms) {
-      for (const lang of LANGUAGES) {
-        if (!symptom[lang]) continue;
-        total++;
-        const path = join(AUDIO_DIR, lang, 'symptoms', `${symptom.id}.wav`);
-        if (await safeGenerate(symptom[lang], path)) success++;
-      }
     }
   }
 
