@@ -72,7 +72,7 @@ function addWavHeader(pcmData, sampleRate = 24000, numChannels = 1, bitsPerSampl
 async function generateAudio(text, outputPath) {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-tts-preview',
+      model: 'gemini-2.5-flash-preview-tts',
       contents: text,
       config: {
         responseModalities: ['AUDIO'],
