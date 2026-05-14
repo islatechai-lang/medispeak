@@ -22,7 +22,7 @@ Return format:
 {"tl":"Tagalog translation","ceb":"Cebuano translation","ilo":"Ilocano translation","war":"Waray translation"}`;
 
       const result = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash-preview-04-17',
         contents: prompt,
       });
 
@@ -55,7 +55,7 @@ Requirements:
 - Include Tagalog (tl), Cebuano (ceb), Ilocano (ilo), and Waray (war) translations in both title and content`;
 
       const result = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash-preview-04-17',
         contents: prompt,
       });
 
