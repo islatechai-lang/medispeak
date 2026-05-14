@@ -1,13 +1,66 @@
 'use client';
+import { useState } from 'react';
 import Image from 'next/image';
 import { LANGUAGES } from '@/lib/languages';
-import { IconSun, IconMoon, IconSwap } from './Icons';
+import { SYMPTOMS } from '@/lib/symptomsData';
+import { PHRASES } from '@/lib/phrasesData';
+import { useIndexedDB } from '@/lib/useIndexedDB';
+import { IconSun, IconMoon, IconSwap, IconDownload, IconCheck } from './Icons';
 import styles from './Header.module.css';
 
 export default function Header({ sourceLang, targetLang, onSourceChange, onTargetChange, isOnline, theme, onThemeToggle, activeTab }) {
+  const [dlStatus, setDlStatus] = useState('idle'); // idle, loading, success
+  const { saveAudio } = useIndexedDB();
+
   const handleSwap = () => {
     onSourceChange(targetLang);
     onTargetChange(sourceLang);
+  };
+
+  const handleDownloadAll = async () => {
+    if (dlStatus === 'loading') return;
+    setDlStatus('loading');
+
+    const tasks = [];
+
+    // Queue Symptoms
+    Object.values(SYMPTOMS).flat().forEach(s => {
+      tasks.push({ id: s.id, type: 'symptoms' });
+    });
+
+    // Queue Phrases
+    PHRASES.forEach(p => {
+      tasks.push({ id: p.id, type: 'phrases' });
+    });
+
+    // Emergency
+    ['emg_1', 'emg_2', 'emg_3', 'emg_4', 'emg_5', 'emg_6', 'emg_7', 'emg_8'].forEach(id => {
+      tasks.push({ id, type: 'emergency' });
+    });
+
+    try {
+      let count = 0;
+      for (const task of tasks) {
+        const path = `${targetLang}/${task.type}/${task.id}`;
+        const url = `/audio/${path}.wav`;
+        
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const blob = await res.blob();
+            await saveAudio(path, blob);
+            count++;
+          }
+        } catch (e) {
+          // Ignore 404s for non-generated files
+        }
+      }
+      setDlStatus('success');
+      setTimeout(() => setDlStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Download failed', err);
+      setDlStatus('idle');
+    }
   };
 
   const showFullLangBar = activeTab === 'translate' || activeTab === 'voice';
@@ -25,6 +78,22 @@ export default function Header({ sourceLang, targetLang, onSourceChange, onTarge
           </div>
         </div>
         <div className={styles.topActions}>
+          {isOnline && (
+            <button
+              className={`${styles.downloadBtn} ${dlStatus === 'loading' ? styles.loading : ''} ${dlStatus === 'success' ? styles.success : ''}`}
+              onClick={handleDownloadAll}
+              disabled={dlStatus === 'loading'}
+              title="Download regional audio for offline use"
+            >
+              {dlStatus === 'loading' ? (
+                <span className={styles.spinner}></span>
+              ) : dlStatus === 'success' ? (
+                <IconCheck size={16} />
+              ) : (
+                <IconDownload size={16} />
+              )}
+            </button>
+          )}
           <button
             className={styles.themeBtn}
             onClick={onThemeToggle}

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useIndexedDB } from '@/lib/useIndexedDB';
 import { IconVolume, IconStop, IconAlert } from './Icons';
 import styles from './SpeakButton.module.css';
 
@@ -8,13 +9,14 @@ let globalStopCurrent = null;
 
 /**
  * SpeakButton — plays audio for given text.
- * Priority: 1) Pre-generated file from /audio/  2) Gemini TTS API  3) Browser TTS fallback
+ * Priority: 1) Local IndexedDB Cache  2) Pre-generated file  3) Gemini TTS API
  */
 export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId, autoPlay = false }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const audioRef = useRef(null);
+  const { getAudio, saveAudio } = useIndexedDB();
 
   // Auto-play when text/audioId changes
   useEffect(() => {
@@ -109,18 +111,38 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
 
     setIsLoading(true);
 
-    // 1) Try pre-generated audio file
+    // 1) Try IndexedDB Cache first (for true offline support of previously seen content)
+    const cacheKey = audioId ? `${langCode}/${audioId}` : `${langCode}/tts/${text.slice(0, 32)}`;
+    try {
+      const cachedBlob = await getAudio(cacheKey);
+      if (cachedBlob) {
+        console.log(`[SpeakButton] Playing from cache: ${cacheKey}`);
+        const url = URL.createObjectURL(cachedBlob);
+        await playAudioUrl(url);
+        return;
+      }
+    } catch (e) {
+      console.warn('Cache check failed', e);
+    }
+
+    // 2) Try pre-generated audio file
     if (audioId && langCode !== 'en') {
       const fileUrl = `/audio/${langCode}/${audioId}.wav`;
       try {
-        await playAudioUrl(fileUrl);
-        return; // If successful, exit.
+        const res = await fetch(fileUrl);
+        if (res.ok) {
+          const blob = await res.blob();
+          await saveAudio(cacheKey, blob); // Cache it for next time
+          const url = URL.createObjectURL(blob);
+          await playAudioUrl(url);
+          return;
+        }
       } catch (e) {
         console.warn(`Pre-generated file not found or failed: ${fileUrl}. Trying API...`);
       }
     }
 
-    // 2) Try Gemini TTS API
+    // 3) Try Gemini TTS API
     setIsLoading(true);
     try {
       const res = await fetch('/api/tts', {
@@ -131,6 +153,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
       
       if (res.ok) {
         const blob = await res.blob();
+        await saveAudio(cacheKey, blob); // Cache it for next time
         const url = URL.createObjectURL(blob);
         await playAudioUrl(url);
         return;
