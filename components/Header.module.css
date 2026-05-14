@@ -80,51 +80,6 @@
   transform: scale(1.05);
 }
 
-.downloadBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.downloadBtn:hover {
-  background: var(--bg-hover);
-  color: var(--primary);
-  border-color: var(--primary);
-  transform: scale(1.05);
-}
-
-.downloadBtn.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10B981;
-  border-color: #10B981;
-}
-
-.downloadBtn.loading {
-  cursor: wait;
-}
-
-.spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .statusBadge {
   display: flex;
   align-items: center;

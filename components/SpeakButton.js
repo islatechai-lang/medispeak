@@ -1,6 +1,5 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useIndexedDB } from '@/lib/useIndexedDB';
 import { IconVolume, IconStop, IconAlert } from './Icons';
 import styles from './SpeakButton.module.css';
 
@@ -9,14 +8,13 @@ let globalStopCurrent = null;
 
 /**
  * SpeakButton — plays audio for given text.
- * Priority: 1) Local IndexedDB Cache  2) Pre-generated file  3) Gemini TTS API
+ * Priority: 1) Pre-generated file from /audio/  2) Gemini TTS API  3) Browser TTS fallback
  */
 export default function SpeakButton({ text, langCode = 'en', size = 'md', label, audioId, autoPlay = false }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const audioRef = useRef(null);
-  const { getAudio, saveAudio } = useIndexedDB();
 
   // Auto-play when text/audioId changes
   useEffect(() => {
@@ -51,7 +49,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     window.speechSynthesis?.cancel();
     setIsSpeaking(false);
     setIsLoading(false);
-    
+
     if (globalStopCurrent === stopCurrent) {
       globalStopCurrent = null;
     }
@@ -66,26 +64,26 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       audioRef.current = audio;
-      
+
       // onplaying guarantees the browser actually started outputting sound
       audio.onplaying = () => {
         setIsSpeaking(true);
         setIsLoading(false);
       };
-      
-      audio.onended = () => { 
-        setIsSpeaking(false); 
+
+      audio.onended = () => {
+        setIsSpeaking(false);
         if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
-        resolve(); 
+        resolve();
       };
-      
-      audio.onerror = (err) => { 
-        setIsSpeaking(false); 
-        setIsLoading(false); 
+
+      audio.onerror = (err) => {
+        setIsSpeaking(false);
+        setIsLoading(false);
         if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
-        reject(err); 
+        reject(err);
       };
-      
+
       audio.play().catch((err) => {
         setIsLoading(false);
         setIsSpeaking(false);
@@ -96,11 +94,11 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
   };
 
   const handleClick = async (forcePlay = false) => {
-    if (isSpeaking) { 
-      stopCurrent(); 
+    if (isSpeaking) {
+      stopCurrent();
       if (!forcePlay) return; // Only abort if it was a manual toggle click
     }
-    
+
     if (!text?.trim()) return;
 
     // Stop any other currently playing SpeakButton globally
@@ -111,38 +109,18 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
 
     setIsLoading(true);
 
-    // 1) Try IndexedDB Cache first (for true offline support of previously seen content)
-    const cacheKey = audioId ? `${langCode}/${audioId}` : `${langCode}/tts/${text.slice(0, 32)}`;
-    try {
-      const cachedBlob = await getAudio(cacheKey);
-      if (cachedBlob) {
-        console.log(`[SpeakButton] Playing from cache: ${cacheKey}`);
-        const url = URL.createObjectURL(cachedBlob);
-        await playAudioUrl(url);
-        return;
-      }
-    } catch (e) {
-      console.warn('Cache check failed', e);
-    }
-
-    // 2) Try pre-generated audio file
+    // 1) Try pre-generated audio file
     if (audioId && langCode !== 'en') {
       const fileUrl = `/audio/${langCode}/${audioId}.wav`;
       try {
-        const res = await fetch(fileUrl);
-        if (res.ok) {
-          const blob = await res.blob();
-          await saveAudio(cacheKey, blob); // Cache it for next time
-          const url = URL.createObjectURL(blob);
-          await playAudioUrl(url);
-          return;
-        }
+        await playAudioUrl(fileUrl);
+        return; // If successful, exit.
       } catch (e) {
         console.warn(`Pre-generated file not found or failed: ${fileUrl}. Trying API...`);
       }
     }
 
-    // 3) Try Gemini TTS API
+    // 2) Try Gemini TTS API
     setIsLoading(true);
     try {
       const res = await fetch('/api/tts', {
@@ -150,10 +128,9 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text.slice(0, 500), langCode }),
       });
-      
+
       if (res.ok) {
         const blob = await res.blob();
-        await saveAudio(cacheKey, blob); // Cache it for next time
         const url = URL.createObjectURL(blob);
         await playAudioUrl(url);
         return;
