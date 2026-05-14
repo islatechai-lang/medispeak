@@ -1,13 +1,66 @@
 'use client';
+import { useState } from 'react';
 import Image from 'next/image';
 import { LANGUAGES } from '@/lib/languages';
-import { IconSun, IconMoon, IconSwap } from './Icons';
+import { SYMPTOMS } from '@/lib/symptomsData';
+import { PHRASES } from '@/lib/phrasesData';
+import { useIndexedDB } from '@/lib/useIndexedDB';
+import { IconSun, IconMoon, IconSwap, IconDownload, IconCheck } from './Icons';
 import styles from './Header.module.css';
 
 export default function Header({ sourceLang, targetLang, onSourceChange, onTargetChange, isOnline, theme, onThemeToggle, activeTab }) {
+  const [dlStatus, setDlStatus] = useState('idle'); // idle, loading, done
+  const [dlProgress, setDlProgress] = useState('');
+  const { saveAudio } = useIndexedDB();
+
   const handleSwap = () => {
     onSourceChange(targetLang);
     onTargetChange(sourceLang);
+  };
+
+  const handleDownloadAll = async () => {
+    if (dlStatus === 'loading') return;
+    setDlStatus('loading');
+
+    const tasks = [];
+
+    // Symptoms
+    Object.values(SYMPTOMS).flat().forEach(s => {
+      tasks.push({ id: s.id, type: 'symptoms' });
+    });
+
+    // Phrases
+    PHRASES.forEach(p => {
+      tasks.push({ id: p.id, type: 'phrases' });
+    });
+
+    // Emergency
+    ['emg_1', 'emg_2', 'emg_3', 'emg_4', 'emg_5', 'emg_6', 'emg_7', 'emg_8'].forEach(id => {
+      tasks.push({ id, type: 'emergency' });
+    });
+
+    let success = 0;
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      const cacheKey = `${targetLang}/${task.type}/${task.id}`;
+      const url = `/audio/${cacheKey}.wav`;
+      setDlProgress(`${i + 1}/${tasks.length}`);
+
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const blob = await res.blob();
+          await saveAudio(cacheKey, blob);
+          success++;
+        }
+      } catch (e) {
+        // Skip files that don't exist yet
+      }
+    }
+
+    setDlProgress(`${success} saved`);
+    setDlStatus('done');
+    setTimeout(() => { setDlStatus('idle'); setDlProgress(''); }, 3000);
   };
 
   const showFullLangBar = activeTab === 'translate' || activeTab === 'voice';
@@ -25,6 +78,22 @@ export default function Header({ sourceLang, targetLang, onSourceChange, onTarge
           </div>
         </div>
         <div className={styles.topActions}>
+          {isOnline && (
+            <button
+              className={`${styles.downloadBtn} ${dlStatus === 'loading' ? styles.loading : ''} ${dlStatus === 'done' ? styles.success : ''}`}
+              onClick={handleDownloadAll}
+              disabled={dlStatus === 'loading'}
+              title={dlStatus === 'loading' ? `Downloading ${dlProgress}...` : dlStatus === 'done' ? dlProgress : 'Download audio for offline use'}
+            >
+              {dlStatus === 'loading' ? (
+                <span className={styles.spinner}></span>
+              ) : dlStatus === 'done' ? (
+                <IconCheck size={16} />
+              ) : (
+                <IconDownload size={16} />
+              )}
+            </button>
+          )}
           <button
             className={styles.themeBtn}
             onClick={onThemeToggle}

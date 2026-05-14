@@ -30,17 +30,6 @@ export default function Home() {
     }
   }, []);
 
-  // Register Service Worker for offline audio caching
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((reg) => {
-        console.log('[App] Service Worker registered, scope:', reg.scope);
-      }).catch((err) => {
-        console.warn('[App] Service Worker registration failed:', err);
-      });
-    }
-  }, []);
-
   useEffect(() => {
     setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
