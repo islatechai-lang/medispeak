@@ -25,6 +25,29 @@
 
 .searchInput::placeholder { color: var(--text-muted); }
 
+.addBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  border: 1px dashed var(--primary);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.addBtn:hover {
+  background: var(--primary);
+  color: white;
+  border-style: solid;
+}
+
 .categoryScroll {
   display: flex;
   gap: 8px;
@@ -49,6 +72,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .catPill:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -79,6 +105,10 @@
   box-shadow: var(--shadow-sm);
 }
 
+.phraseCard.customCard {
+  border-left: 3px solid var(--accent);
+}
+
 .phraseContent { flex: 1; min-width: 0; }
 
 .phraseEn {
@@ -94,6 +124,19 @@
   font-weight: 500;
   margin: 0;
   line-height: 1.4;
+}
+
+.customBadge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
 .phraseActions {
@@ -121,9 +164,147 @@
 .pinBtn:hover { background: var(--bg-hover); }
 .pinBtn.pinActive { color: var(--primary); }
 
+.deleteBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteBtn:hover { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
 .empty {
   text-align: center;
   padding: 30px;
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.25s ease;
+}
+
+.modalTitle {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.modalDesc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.modalInput:focus { border-color: var(--primary); }
+
+.modalSelect {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.errorText {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin: 0 0 10px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.cancelBtn {
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelBtn:hover { background: var(--bg-hover); }
+
+.submitBtn {
+  padding: 9px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: white;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitBtn:hover { background: var(--primary-dark); }
+.submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
