@@ -233,3 +233,16 @@ button { cursor: pointer; font-family: inherit; }
     right: calc(50% - 260px + 16px);
   }
 }
+
+.cachedDot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10B981;
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+  animation: fadeIn 0.5s ease;
+}
