@@ -198,7 +198,13 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
         <div className={styles.resultCard}>
           <div className={styles.transcriptHeader}>
             <span className={styles.langTagResult}>{getLangName(targetLang)}</span>
-            <SpeakButton text={translation.translation} langCode={targetLang} size="md" label="Play" />
+            <SpeakButton 
+              text={translation.translation} 
+              langCode={targetLang} 
+              size="md" 
+              label="Play" 
+              autoPlay={autoTranslate} 
+            />
           </div>
           <p className={styles.resultText}>{translation.translation}</p>
           {translation.pronunciation && (

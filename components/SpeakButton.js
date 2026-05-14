@@ -116,72 +116,37 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
         await playAudioUrl(fileUrl);
         return; // If successful, exit.
       } catch (e) {
-        // File not found or not cached. Proceed to fallback.
+        console.warn(`Pre-generated file not found or failed: ${fileUrl}. Trying API...`);
       }
     }
 
     // 2) Try Gemini TTS API
-    setIsLoading(true); // Re-enable spinner for API fallback
+    setIsLoading(true);
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text.slice(0, 500), langCode }),
       });
+      
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         await playAudioUrl(url);
         return;
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error(`TTS API failed: ${res.status} ${errData.error || 'Unknown error'}`);
       }
-    } catch {}
-
-    // 3) Fallback: browser TTS
-    setIsLoading(true); // Re-enable spinner for browser fallback
-    try {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode === 'ceb' || langCode === 'tl' ? 'fil' : langCode;
-      
-      let ttsTimeout;
-      
-      utterance.onstart = () => {
-        clearTimeout(ttsTimeout);
-        setIsSpeaking(true);
-        setIsLoading(false);
-      };
-      
-      utterance.onend = () => {
-        clearTimeout(ttsTimeout);
-        setIsSpeaking(false);
-        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
-      };
-      
-      utterance.onerror = () => {
-        clearTimeout(ttsTimeout);
-        setIsSpeaking(false);
-        setIsLoading(false);
-        if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
-      };
-      
-      window.speechSynthesis.speak(utterance);
-      
-      // Safety timeout: if TTS engine hangs (common when offline without local voices)
-      ttsTimeout = setTimeout(() => {
-        if (!isSpeaking) {
-          window.speechSynthesis?.cancel();
-          setIsSpeaking(false);
-          setIsLoading(false);
-          showError();
-          if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
-        }
-      }, 2000);
-      
-    } catch {
-      setIsSpeaking(false);
-      setIsLoading(false);
-      showError();
-      if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
+    } catch (apiErr) {
+      console.error('TTS API request failed:', apiErr);
     }
+
+    // 3) Final Fallback: Error
+    setIsLoading(false);
+    setIsSpeaking(false);
+    showError();
+    if (globalStopCurrent === stopCurrent) globalStopCurrent = null;
   };
 
   return (
@@ -189,7 +154,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
       className={`${styles.speakBtn} ${styles[size]} ${isSpeaking ? styles.active : ''} ${isLoading ? styles.loading : ''} ${isError ? styles.error : ''}`}
       onClick={() => handleClick()}
       disabled={isLoading || isError}
-      title={isSpeaking ? 'Stop' : 'Listen'}
+      title={isSpeaking ? 'Stop' : isError ? 'Error' : 'Listen'}
       aria-label={isSpeaking ? 'Stop speaking' : `Listen in ${langCode}`}
     >
       <span className={styles.icon}>
@@ -203,7 +168,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
           <IconVolume size={size === 'sm' ? 14 : size === 'lg' ? 18 : 16} />
         )}
       </span>
-      {label && <span className={styles.label}>{isError ? 'Failed' : label}</span>}
+      {label && <span className={styles.label}>{isError ? 'Quota Error' : label}</span>}
     </button>
   );
 }

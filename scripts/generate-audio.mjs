@@ -127,8 +127,8 @@ async function main() {
     }
 
     const res = await generateAudio(text, path);
-    console.log('  ⏳ Steady rate-limit: Sleeping 10s...');
-    await sleep(10000); // Steady 6 RPM (well under the 15 RPM limit)
+    console.log('  ⏳ Steady rate-limit: Sleeping 5s...');
+    await sleep(5000); // Steady 12 RPM (under the 15 RPM limit)
     return res;
   }
 
