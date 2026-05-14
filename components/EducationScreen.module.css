@@ -18,9 +18,9 @@
 .addTopicBtn {
   padding: 7px 14px;
   border-radius: var(--radius-full);
-  border: 1px dashed var(--primary);
-  background: var(--primary-subtle);
-  color: var(--primary);
+  border: none;
+  background: var(--primary);
+  color: white;
   font-family: inherit;
   font-size: 0.72rem;
   font-weight: 700;
@@ -31,9 +31,8 @@
 }
 
 .addTopicBtn:hover {
-  background: var(--primary);
-  color: white;
-  border-style: solid;
+  background: var(--primary-dark);
+  transform: scale(1.05);
 }
 
 .topicList { display: flex; flex-direction: column; gap: 10px; }

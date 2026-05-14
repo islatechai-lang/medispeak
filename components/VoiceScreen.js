@@ -171,7 +171,12 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
         </div>
       </div>
 
-      {isProcessing && <LoadingSpinner size="md" text="Recognizing speech with Deepgram..." />}
+      {(isProcessing || isTranslating) && (
+        <LoadingSpinner 
+          size="md" 
+          text={isProcessing ? 'Recognizing speech with Deepgram...' : 'Translating with AI...'} 
+        />
+      )}
 
       {error && <div className={styles.errorCard}>{error}</div>}
 
@@ -191,8 +196,6 @@ export default function VoiceScreen({ sourceLang, targetLang }) {
           )}
         </div>
       )}
-
-      {isTranslating && <LoadingSpinner size="md" text="Translating..." />}
 
       {translation && !isTranslating && (
         <div className={styles.resultCard}>

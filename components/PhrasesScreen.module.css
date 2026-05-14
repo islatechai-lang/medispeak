@@ -29,10 +29,10 @@
   width: 30px;
   height: 30px;
   border-radius: var(--radius-full);
-  border: 1px dashed var(--primary);
-  background: var(--primary-subtle);
-  color: var(--primary);
-  font-size: 1.1rem;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-size: 1.2rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -43,9 +43,8 @@
 }
 
 .addBtn:hover {
-  background: var(--primary);
-  color: white;
-  border-style: solid;
+  background: var(--primary-dark);
+  transform: scale(1.05);
 }
 
 .categoryScroll {
