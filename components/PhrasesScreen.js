@@ -1,9 +1,10 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { PHRASE_CATEGORIES, PHRASES } from '@/lib/phrasesData';
 import { useIndexedDB } from '@/lib/useIndexedDB';
 import { IconSearch, IconPin } from './Icons';
 import SpeakButton from './SpeakButton';
+import Toast from './Toast';
 import styles from './PhrasesScreen.module.css';
 
 export default function PhrasesScreen({ targetLang }) {
@@ -15,6 +16,9 @@ export default function PhrasesScreen({ targetLang }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState('');
   const [customPhrases, setCustomPhrases] = useState([]);
+  const [longPressId, setLongPressId] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '' });
+  const longPressTimer = useRef(null);
   const { addCustomPhrase, getCustomPhrases, deleteCustomPhrase } = useIndexedDB();
 
   const [pinned, setPinned] = useState(() => {
@@ -25,14 +29,12 @@ export default function PhrasesScreen({ targetLang }) {
     return [];
   });
 
-  // Load custom phrases from IndexedDB
   useEffect(() => {
     if (getCustomPhrases) {
       getCustomPhrases().then(setCustomPhrases).catch(() => {});
     }
   }, [getCustomPhrases]);
 
-  // Merge built-in + custom phrases
   const allPhrases = useMemo(() => {
     const custom = customPhrases.map(p => ({
       ...p,
@@ -51,7 +53,6 @@ export default function PhrasesScreen({ targetLang }) {
     } else if (activeCategory !== 'all') {
       list = list.filter(p => p.category === activeCategory);
     }
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(p => p.en.toLowerCase().includes(q) || (p[targetLang] && p[targetLang].toLowerCase().includes(q)));
@@ -65,6 +66,21 @@ export default function PhrasesScreen({ targetLang }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('medispeak_pinned_phrases', JSON.stringify(updated));
     }
+  };
+
+  const showToast = useCallback((message) => {
+    setToast({ show: true, message });
+  }, []);
+
+  // Long press handlers
+  const handleTouchStart = (id) => {
+    longPressTimer.current = setTimeout(() => {
+      setLongPressId(id);
+    }, 600);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimer.current);
   };
 
   const handleAddPhrase = async () => {
@@ -99,6 +115,7 @@ export default function PhrasesScreen({ targetLang }) {
       setCustomPhrases(prev => [...prev, saved]);
       setNewPhrase('');
       setShowAddModal(false);
+      showToast('Phrase added successfully!');
     } catch (err) {
       setGenError(err.message);
     } finally {
@@ -110,10 +127,18 @@ export default function PhrasesScreen({ targetLang }) {
     const dbId = parseInt(customId.replace('custom_', ''));
     await deleteCustomPhrase(dbId);
     setCustomPhrases(prev => prev.filter(p => p.id !== dbId));
+    // Also remove from pinned if pinned
+    const updated = pinned.filter(p => p !== customId);
+    setPinned(updated);
+    localStorage.setItem('medispeak_pinned_phrases', JSON.stringify(updated));
+    setLongPressId(null);
+    showToast('Phrase deleted');
   };
 
   return (
     <div className={styles.screen}>
+      <Toast message={toast.message} show={toast.show} onHide={() => setToast({ show: false, message: '' })} />
+
       <div className={styles.searchWrap}>
         <span className={styles.searchIcon}><IconSearch size={16} /></span>
         <input
@@ -162,30 +187,41 @@ export default function PhrasesScreen({ targetLang }) {
           </p>
         )}
         {filteredPhrases.map(phrase => (
-          <div key={phrase.id} className={`${styles.phraseCard} ${phrase.isCustom ? styles.customCard : ''}`}>
-            <div className={styles.phraseContent}>
-              <p className={styles.phraseEn}>{phrase.en}</p>
-              <p className={styles.phraseTl}>{phrase[targetLang] || phrase.en}</p>
-              {phrase.isCustom && <span className={styles.customBadge}>Custom</span>}
-            </div>
-            <div className={styles.phraseActions}>
-              <SpeakButton text={phrase[targetLang] || phrase.en} langCode={targetLang} size="sm" />
-              {phrase.isCustom ? (
-                <button
-                  className={styles.deleteBtn}
-                  onClick={() => handleDeleteCustom(phrase.id)}
-                  title="Delete custom phrase"
-                >✕</button>
-              ) : (
-                <button
-                  className={`${styles.pinBtn} ${pinned.includes(phrase.id) ? styles.pinActive : ''}`}
-                  onClick={() => togglePin(phrase.id)}
-                  aria-label={pinned.includes(phrase.id) ? 'Unpin phrase' : 'Pin phrase'}
-                >
-                  <IconPin size={16} filled={pinned.includes(phrase.id)} />
-                </button>
-              )}
-            </div>
+          <div
+            key={phrase.id}
+            className={`${styles.phraseCard} ${phrase.isCustom ? styles.customCard : ''} ${longPressId === phrase.id ? styles.longPressed : ''}`}
+            onTouchStart={() => phrase.isCustom && handleTouchStart(phrase.id)}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+            onContextMenu={(e) => { if (phrase.isCustom) { e.preventDefault(); setLongPressId(phrase.id); } }}
+          >
+            {longPressId === phrase.id ? (
+              /* Long press actions overlay */
+              <div className={styles.longPressActions}>
+                <button className={styles.lpCancelBtn} onClick={() => setLongPressId(null)}>Cancel</button>
+                <button className={styles.lpDeleteBtn} onClick={() => handleDeleteCustom(phrase.id)}>🗑 Delete</button>
+              </div>
+            ) : (
+              <>
+                <div className={styles.phraseContent}>
+                  <p className={styles.phraseEn}>
+                    {phrase.isCustom && <span className={styles.customBadge}>Custom</span>}
+                    {phrase.en}
+                  </p>
+                  <p className={styles.phraseTl}>{phrase[targetLang] || phrase.en}</p>
+                </div>
+                <div className={styles.phraseActions}>
+                  <SpeakButton text={phrase[targetLang] || phrase.en} langCode={targetLang} size="sm" />
+                  <button
+                    className={`${styles.pinBtn} ${pinned.includes(phrase.id) ? styles.pinActive : ''}`}
+                    onClick={() => togglePin(phrase.id)}
+                    aria-label={pinned.includes(phrase.id) ? 'Unpin phrase' : 'Pin phrase'}
+                  >
+                    <IconPin size={16} filled={pinned.includes(phrase.id)} />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>

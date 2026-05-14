@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { EDUCATION_TOPICS } from '@/lib/educationData';
 import { useIndexedDB } from '@/lib/useIndexedDB';
 import { IconChevronDown } from './Icons';
 import SpeakButton from './SpeakButton';
+import Toast from './Toast';
 import styles from './EducationScreen.module.css';
 
 export default function EducationScreen({ targetLang }) {
@@ -13,6 +14,9 @@ export default function EducationScreen({ targetLang }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState('');
   const [customTopics, setCustomTopics] = useState([]);
+  const [longPressId, setLongPressId] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '' });
+  const longPressTimer = useRef(null);
   const { addCustomEducation, getCustomEducation, deleteCustomEducation } = useIndexedDB();
 
   useEffect(() => {
@@ -34,6 +38,21 @@ export default function EducationScreen({ targetLang }) {
   const getContent = (topic) => {
     const lang = topic.content?.[targetLang] ? targetLang : 'en';
     return topic.content?.[lang] || topic.content?.en || [];
+  };
+
+  const showToast = useCallback((message) => {
+    setToast({ show: true, message });
+  }, []);
+
+  // Long press handlers
+  const handleTouchStart = (id) => {
+    longPressTimer.current = setTimeout(() => {
+      setLongPressId(id);
+    }, 600);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimer.current);
   };
 
   const handleGenerate = async () => {
@@ -67,6 +86,7 @@ export default function EducationScreen({ targetLang }) {
       setCustomTopics(prev => [...prev, saved]);
       setNewTopic('');
       setShowAddModal(false);
+      showToast('Topic created successfully!');
     } catch (err) {
       setGenError(err.message);
     } finally {
@@ -77,10 +97,14 @@ export default function EducationScreen({ targetLang }) {
   const handleDelete = async (id) => {
     await deleteCustomEducation(id);
     setCustomTopics(prev => prev.filter(t => t.id !== id));
+    setLongPressId(null);
+    showToast('Topic deleted');
   };
 
   return (
     <div className={styles.screen}>
+      <Toast message={toast.message} show={toast.show} onHide={() => setToast({ show: false, message: '' })} />
+
       <div className={styles.headerRow}>
         <p className={styles.intro}>Health education materials translated for your patients.</p>
         <button className={styles.addTopicBtn} onClick={() => setShowAddModal(true)} title="Add topic">
@@ -90,50 +114,60 @@ export default function EducationScreen({ targetLang }) {
 
       <div className={styles.topicList}>
         {allTopics.map((topic, idx) => {
-          const topicKey = topic.id || `custom_${idx}`;
+          const topicKey = topic.isCustom ? topic.id : topic.id || `builtin_${idx}`;
           const isExpanded = expandedTopic === topicKey;
           const content = getContent(topic);
           const title = getTitle(topic);
+          const isLongPressed = longPressId === topicKey;
 
           return (
-            <div key={topicKey} className={`${styles.topicCard} ${isExpanded ? styles.expanded : ''} ${topic.isCustom ? styles.customCard : ''}`}>
-              <button className={styles.topicHeader} onClick={() => setExpandedTopic(isExpanded ? null : topicKey)}>
-                <div className={styles.topicInfo}>
-                  <span className={styles.topicIcon} style={{ color: topic.color }}>{topic.icon}</span>
-                  <div>
-                    <p className={styles.topicTitle}>{title}</p>
-                    {topic.title?.en !== title && <p className={styles.topicTitleEn}>{topic.title?.en}</p>}
-                    {topic.isCustom && <span className={styles.customBadge}>Custom</span>}
-                  </div>
+            <div
+              key={topicKey}
+              className={`${styles.topicCard} ${isExpanded ? styles.expanded : ''} ${topic.isCustom ? styles.customCard : ''} ${isLongPressed ? styles.longPressed : ''}`}
+              onTouchStart={() => topic.isCustom && handleTouchStart(topicKey)}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+              onContextMenu={(e) => { if (topic.isCustom) { e.preventDefault(); setLongPressId(topicKey); } }}
+            >
+              {isLongPressed ? (
+                <div className={styles.longPressActions}>
+                  <button className={styles.lpCancelBtn} onClick={() => setLongPressId(null)}>Cancel</button>
+                  <button className={styles.lpDeleteBtn} onClick={() => handleDelete(topicKey)}>🗑 Delete</button>
                 </div>
-                <div className={styles.topicActions}>
-                  {topic.isCustom && (
-                    <span
-                      className={styles.deleteTopicBtn}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(topic.id); }}
-                      title="Delete topic"
-                    >✕</span>
-                  )}
-                  <span className={`${styles.chevron} ${isExpanded ? styles.chevronUp : ''}`}>
-                    <IconChevronDown size={18} />
-                  </span>
-                </div>
-              </button>
+              ) : (
+                <>
+                  <button className={styles.topicHeader} onClick={() => setExpandedTopic(isExpanded ? null : topicKey)}>
+                    <div className={styles.topicInfo}>
+                      <span className={styles.topicIcon} style={{ color: topic.color }}>{topic.icon}</span>
+                      <div className={styles.topicMeta}>
+                        <p className={styles.topicTitle}>
+                          {topic.isCustom && <span className={styles.customBadge}>Custom</span>}
+                          {title}
+                        </p>
+                        {topic.title?.en !== title && <p className={styles.topicTitleEn}>{topic.title?.en}</p>}
+                      </div>
+                    </div>
+                    <span className={`${styles.chevron} ${isExpanded ? styles.chevronUp : ''}`}>
+                      <IconChevronDown size={18} />
+                    </span>
+                  </button>
 
-              {isExpanded && (
-                <div className={styles.topicContent}>
-                  <ul className={styles.contentList}>
-                    {content.map((item, i) => (
-                      <li key={i} className={styles.contentItem}>
-                        <span className={styles.bullet} style={{ color: topic.color }}>•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className={styles.contentActions}>
-                    <SpeakButton text={content.join('. ')} langCode={targetLang} size="md" label="Read Aloud" />
-                  </div>
-                </div>
+                  {isExpanded && (
+                    <div className={styles.topicContent}>
+                      <ul className={styles.contentList}>
+                        {content.map((item, i) => (
+                          <li key={i} className={styles.contentItem}>
+                            <span className={styles.bullet} style={{ color: topic.color }}>•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className={styles.contentActions}>
+                        <SpeakButton text={content.join('. ')} langCode={targetLang} size="md" label="Read Aloud" />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           );
