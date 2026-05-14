@@ -103,7 +103,7 @@
   flex-shrink: 0;
 }
 
-.favBtn {
+.pinBtn {
   width: 32px;
   height: 32px;
   border: none;
@@ -118,8 +118,8 @@
   justify-content: center;
 }
 
-.favBtn:hover { background: var(--bg-hover); }
-.favBtn.favActive { color: var(--warning); }
+.pinBtn:hover { background: var(--bg-hover); }
+.pinBtn.pinActive { color: var(--primary); }
 
 .empty {
   text-align: center;

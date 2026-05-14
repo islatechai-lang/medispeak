@@ -1,16 +1,16 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PHRASE_CATEGORIES, PHRASES } from '@/lib/phrasesData';
-import { IconSearch, IconStar } from './Icons';
+import { IconSearch, IconPin } from './Icons';
 import SpeakButton from './SpeakButton';
 import styles from './PhrasesScreen.module.css';
 
 export default function PhrasesScreen({ targetLang }) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [favorites, setFavorites] = useState(() => {
+  const [pinned, setPinned] = useState(() => {
     if (typeof window !== 'undefined') {
-      try { return JSON.parse(localStorage.getItem('medispeak_fav_phrases') || '[]'); }
+      try { return JSON.parse(localStorage.getItem('medispeak_pinned_phrases') || '[]'); }
       catch { return []; }
     }
     return [];
@@ -18,21 +18,24 @@ export default function PhrasesScreen({ targetLang }) {
 
   const filteredPhrases = useMemo(() => {
     let list = PHRASES;
-    if (activeCategory !== 'all') {
+    if (activeCategory === 'pinned') {
+      list = list.filter(p => pinned.includes(p.id));
+    } else if (activeCategory !== 'all') {
       list = list.filter(p => p.category === activeCategory);
     }
+    
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(p => p.en.toLowerCase().includes(q) || (p[targetLang] && p[targetLang].toLowerCase().includes(q)));
     }
     return list;
-  }, [activeCategory, searchQuery, targetLang]);
+  }, [activeCategory, searchQuery, targetLang, pinned]);
 
-  const toggleFavorite = (id) => {
-    const updated = favorites.includes(id) ? favorites.filter(f => f !== id) : [...favorites, id];
-    setFavorites(updated);
+  const togglePin = (id) => {
+    const updated = pinned.includes(id) ? pinned.filter(f => f !== id) : [...pinned, id];
+    setPinned(updated);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('medispeak_fav_phrases', JSON.stringify(updated));
+      localStorage.setItem('medispeak_pinned_phrases', JSON.stringify(updated));
     }
   };
 
@@ -55,6 +58,12 @@ export default function PhrasesScreen({ targetLang }) {
           className={`${styles.catPill} ${activeCategory === 'all' ? styles.activePill : ''}`}
           onClick={() => setActiveCategory('all')}
         >All</button>
+        <button
+          className={`${styles.catPill} ${activeCategory === 'pinned' ? styles.activePill : ''}`}
+          onClick={() => setActiveCategory('pinned')}
+        >
+          <IconPin size={12} filled={activeCategory === 'pinned'} /> Pinned
+        </button>
         {PHRASE_CATEGORIES.map(cat => (
           <button
             key={cat.id}
@@ -68,7 +77,9 @@ export default function PhrasesScreen({ targetLang }) {
 
       <div className={styles.phraseList}>
         {filteredPhrases.length === 0 && (
-          <p className={styles.empty}>No phrases found.</p>
+          <p className={styles.empty}>
+            {activeCategory === 'pinned' ? 'No pinned phrases yet.' : 'No phrases found.'}
+          </p>
         )}
         {filteredPhrases.map(phrase => (
           <div key={phrase.id} className={styles.phraseCard}>
@@ -79,11 +90,11 @@ export default function PhrasesScreen({ targetLang }) {
             <div className={styles.phraseActions}>
               <SpeakButton text={phrase[targetLang] || phrase.en} langCode={targetLang} size="sm" audioId={`phrases/${phrase.id}`} />
               <button
-                className={`${styles.favBtn} ${favorites.includes(phrase.id) ? styles.favActive : ''}`}
-                onClick={() => toggleFavorite(phrase.id)}
-                aria-label={favorites.includes(phrase.id) ? 'Remove from favorites' : 'Add to favorites'}
+                className={`${styles.pinBtn} ${pinned.includes(phrase.id) ? styles.pinActive : ''}`}
+                onClick={() => togglePin(phrase.id)}
+                aria-label={pinned.includes(phrase.id) ? 'Unpin phrase' : 'Pin phrase'}
               >
-                <IconStar size={16} filled={favorites.includes(phrase.id)} />
+                <IconPin size={16} filled={pinned.includes(phrase.id)} />
               </button>
             </div>
           </div>
