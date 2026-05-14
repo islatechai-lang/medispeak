@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { PHRASE_CATEGORIES, PHRASES } from '@/lib/phrasesData';
 import { useIndexedDB } from '@/lib/useIndexedDB';
-import { IconSearch, IconPin } from './Icons';
+import { IconSearch, IconPin, IconTrash } from './Icons';
 import SpeakButton from './SpeakButton';
 import Toast from './Toast';
 import styles from './PhrasesScreen.module.css';
@@ -72,11 +72,8 @@ export default function PhrasesScreen({ targetLang }) {
     setToast({ show: true, message });
   }, []);
 
-  // Long press handlers
   const handleTouchStart = (id) => {
-    longPressTimer.current = setTimeout(() => {
-      setLongPressId(id);
-    }, 600);
+    longPressTimer.current = setTimeout(() => setLongPressId(id), 600);
   };
 
   const handleTouchEnd = () => {
@@ -115,6 +112,8 @@ export default function PhrasesScreen({ targetLang }) {
       setCustomPhrases(prev => [...prev, saved]);
       setNewPhrase('');
       setShowAddModal(false);
+      // Navigate to the category where the phrase was created
+      setActiveCategory(newCategory);
       showToast('Phrase added successfully!');
     } catch (err) {
       setGenError(err.message);
@@ -127,7 +126,6 @@ export default function PhrasesScreen({ targetLang }) {
     const dbId = parseInt(customId.replace('custom_', ''));
     await deleteCustomPhrase(dbId);
     setCustomPhrases(prev => prev.filter(p => p.id !== dbId));
-    // Also remove from pinned if pinned
     const updated = pinned.filter(p => p !== customId);
     setPinned(updated);
     localStorage.setItem('medispeak_pinned_phrases', JSON.stringify(updated));
@@ -196,10 +194,11 @@ export default function PhrasesScreen({ targetLang }) {
             onContextMenu={(e) => { if (phrase.isCustom) { e.preventDefault(); setLongPressId(phrase.id); } }}
           >
             {longPressId === phrase.id ? (
-              /* Long press actions overlay */
               <div className={styles.longPressActions}>
                 <button className={styles.lpCancelBtn} onClick={() => setLongPressId(null)}>Cancel</button>
-                <button className={styles.lpDeleteBtn} onClick={() => handleDeleteCustom(phrase.id)}>🗑 Delete</button>
+                <button className={styles.lpDeleteBtn} onClick={() => handleDeleteCustom(phrase.id)}>
+                  <IconTrash size={14} /> Delete
+                </button>
               </div>
             ) : (
               <>

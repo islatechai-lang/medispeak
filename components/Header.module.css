@@ -123,28 +123,6 @@
   gap: 8px;
 }
 
-.langSelect {
-  flex: 1;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  font-family: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.langSelect:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-subtle);
-}
-
 .swapBtn {
   width: 36px;
   height: 36px;
@@ -178,4 +156,127 @@
   color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ── Custom Language Picker ── */
+.langPicker {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.langTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.langTrigger:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.langFlag {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.langName {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.langChevron {
+  display: flex;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.langChevronUp {
+  transform: rotate(180deg);
+}
+
+.langDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.langOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.langOption:hover {
+  background: var(--bg-hover);
+}
+
+.langOption + .langOption {
+  border-top: 1px solid var(--border-light);
+}
+
+.langOptionActive {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.langOptionActive:hover {
+  background: var(--primary-muted);
+}
+
+.langOptFlag {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.langOptName {
+  flex: 1;
+  text-align: left;
+}
+
+.langOptCheck {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }

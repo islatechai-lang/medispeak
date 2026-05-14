@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { EDUCATION_TOPICS } from '@/lib/educationData';
 import { useIndexedDB } from '@/lib/useIndexedDB';
-import { IconChevronDown } from './Icons';
+import { IconChevronDown, IconTrash } from './Icons';
 import SpeakButton from './SpeakButton';
 import Toast from './Toast';
 import styles from './EducationScreen.module.css';
@@ -132,7 +132,9 @@ export default function EducationScreen({ targetLang }) {
               {isLongPressed ? (
                 <div className={styles.longPressActions}>
                   <button className={styles.lpCancelBtn} onClick={() => setLongPressId(null)}>Cancel</button>
-                  <button className={styles.lpDeleteBtn} onClick={() => handleDelete(topicKey)}>🗑 Delete</button>
+                  <button className={styles.lpDeleteBtn} onClick={() => handleDelete(topicKey)}>
+                    <IconTrash size={14} /> Delete
+                  </button>
                 </div>
               ) : (
                 <>

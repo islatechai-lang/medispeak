@@ -1,8 +1,54 @@
 'use client';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { LANGUAGES } from '@/lib/languages';
-import { IconSun, IconMoon, IconSwap } from './Icons';
+import { IconSun, IconMoon, IconSwap, IconChevronDown } from './Icons';
 import styles from './Header.module.css';
+
+function LangPicker({ value, onChange, label }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = LANGUAGES.find(l => l.code === value) || LANGUAGES[0];
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('touchstart', handler); };
+  }, []);
+
+  return (
+    <div className={styles.langPicker} ref={ref}>
+      <button
+        className={styles.langTrigger}
+        onClick={() => setOpen(!open)}
+        aria-label={label}
+      >
+        <span className={styles.langFlag}>{selected.flag}</span>
+        <span className={styles.langName}>{selected.name}</span>
+        <span className={`${styles.langChevron} ${open ? styles.langChevronUp : ''}`}>
+          <IconChevronDown size={14} />
+        </span>
+      </button>
+
+      {open && (
+        <div className={styles.langDropdown}>
+          {LANGUAGES.map(l => (
+            <button
+              key={l.code}
+              className={`${styles.langOption} ${l.code === value ? styles.langOptionActive : ''}`}
+              onClick={() => { onChange(l.code); setOpen(false); }}
+            >
+              <span className={styles.langOptFlag}>{l.flag}</span>
+              <span className={styles.langOptName}>{l.name}</span>
+              {l.code === value && <span className={styles.langOptCheck}>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Header({ sourceLang, targetLang, onSourceChange, onTargetChange, isOnline, theme, onThemeToggle, activeTab }) {
   const handleSwap = () => {
@@ -41,45 +87,18 @@ export default function Header({ sourceLang, targetLang, onSourceChange, onTarge
 
       {showFullLangBar ? (
         <div className={styles.langBar}>
-          <select
-            className={styles.langSelect}
-            value={sourceLang}
-            onChange={(e) => onSourceChange(e.target.value)}
-            aria-label="Source language"
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.code} value={l.code}>{l.flag} {l.name}</option>
-            ))}
-          </select>
+          <LangPicker value={sourceLang} onChange={onSourceChange} label="Source language" />
 
           <button className={styles.swapBtn} onClick={handleSwap} aria-label="Swap languages">
             <IconSwap size={16} />
           </button>
 
-          <select
-            className={styles.langSelect}
-            value={targetLang}
-            onChange={(e) => onTargetChange(e.target.value)}
-            aria-label="Target language"
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.code} value={l.code}>{l.flag} {l.name}</option>
-            ))}
-          </select>
+          <LangPicker value={targetLang} onChange={onTargetChange} label="Target language" />
         </div>
       ) : (
         <div className={styles.langBarSimple}>
           <span className={styles.langLabel}>Patient Language:</span>
-          <select
-            className={styles.langSelect}
-            value={targetLang}
-            onChange={(e) => onTargetChange(e.target.value)}
-            aria-label="Patient language"
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.code} value={l.code}>{l.flag} {l.name}</option>
-            ))}
-          </select>
+          <LangPicker value={targetLang} onChange={onTargetChange} label="Patient language" />
         </div>
       )}
     </header>
