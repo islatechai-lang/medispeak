@@ -159,19 +159,19 @@ MediSpeak is an innovative nursing-inspired digital solution designed to overcom
 
 
 
-MediSpeak V1.1 update
+medispeak v1.1 update 🚀
 
 auto-download incase of lost connection: audio saves in the background now. once you see the green dot, you’re good to go offline. 
 
 ai custom phrases: add your own phrases and the ai translates them instantly into all 5 languages.
 
-you can now pin any phrase for fast and easy accessthem for fast access in the "my phrases" section. 📌
+you can now pin any phrase for fast and easy access in the "pinned" section. 📌
 
 ai health topics: generate custom education cards for any topic in all 5 languages using ai.
 
 voice & history: voice section now has auto-translate, and all your patient history is saved safely on your device. 
 
-new look: way cleaner language selector modal on top. long-press to delete custom phrases, and smooth notifications. 🎨
+new look: way cleaner language selector modal on top. long-press to delete custom phrases, topics, and recent translations, plus smooth notifications.
 
 next:
 
