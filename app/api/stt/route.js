@@ -26,8 +26,9 @@ export async function POST(request) {
     };
 
     const dgLang = langMap[language] || 'en';
+    const dgModel = dgLang === 'tl' ? 'nova-3' : 'nova-2';
 
-    const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&language=' + dgLang, {
+    const response = await fetch(`https://api.deepgram.com/v1/listen?model=${dgModel}&smart_format=true&language=${dgLang}`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${process.env.DEEPGRAM_API_KEY}`,
