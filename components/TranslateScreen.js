@@ -195,26 +195,13 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
       <div className={styles.inputCard}>
         <div className={styles.cardHeader}>
           <span className={styles.langTag}>{getLangName(sourceLang)}</span>
-          <button
-            className={`${styles.voiceBtn} ${isListening ? styles.listening : ''}`}
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onMouseLeave={isListening ? stopRecording : undefined}
-            onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-            onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
-            disabled={isLoading || isProcessingSTT}
-            title="Press and hold to speak"
-          >
-            {isListening ? <IconStop size={18} /> : <IconMicrophone size={18} />}
-            {isListening && <span className={styles.pulse}></span>}
-          </button>
         </div>
         <textarea
           className={styles.textarea}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isListening ? 'Listening...' : 'Type or tap mic to speak...'}
+          placeholder="Type message or hold mic below to speak..."
           rows={3}
           disabled={isListening}
           aria-label="Text to translate"
@@ -229,6 +216,25 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
             {isLoading ? 'Translating...' : 'Translate'}
           </button>
         </div>
+      </div>
+
+      <div className={styles.micFabContainer}>
+        <p className={styles.micInstruction}>
+          {isListening ? 'Release to translate' : 'Hold to speak'}
+        </p>
+        <button
+          className={`${styles.voiceFab} ${isListening ? styles.listening : ''}`}
+          onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+          onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
+          onTouchCancel={(e) => { e.preventDefault(); stopRecording(); }}
+          disabled={isLoading || isProcessingSTT}
+          aria-label="Speak message"
+        >
+          <span className={styles.micIcon}>
+            {isListening ? <IconStop size={32} /> : <IconMicrophone size={32} />}
+          </span>
+          {isListening && <span className={styles.pulse}></span>}
+        </button>
       </div>
 
       {(isLoading || isProcessingSTT) && (
