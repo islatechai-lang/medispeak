@@ -138,8 +138,8 @@ export function IconCopy({ size = 20 }) {
 export function IconSwap({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3L4 7l4 4" /><path d="M4 7h16" />
-      <path d="m16 21 4-4-4-4" /><path d="M20 17H4" />
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
     </svg>
   );
 }
