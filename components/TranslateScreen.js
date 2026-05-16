@@ -22,6 +22,7 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
+  const isPressingRef = useRef(false);
   const longPressTimer = useRef(null);
   const { addRecentTranslation, getRecentTranslations, deleteRecentTranslation } = useIndexedDB();
 
@@ -36,6 +37,8 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
   }, []);
 
   const startRecording = useCallback(async () => {
+    if (isPressingRef.current) return;
+    isPressingRef.current = true;
     setError('');
     chunksRef.current = [];
 
@@ -48,6 +51,13 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
           noiseSuppression: true,
         } 
       });
+      
+      // If user released the button before mic permission was granted
+      if (!isPressingRef.current) {
+        stream.getTracks().forEach(t => t.stop());
+        return;
+      }
+      
       streamRef.current = stream;
 
       const mediaRecorder = new MediaRecorder(stream, {
@@ -70,11 +80,13 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
       setIsListening(true);
     } catch (err) {
       console.error('Mic error:', err);
-      setError('Could not access microphone. Please allow microphone permission.');
+      setError('Could not access microphone. Please check permissions.');
+      isPressingRef.current = false;
     }
   }, [sourceLang]);
 
   const stopRecording = useCallback(() => {
+    isPressingRef.current = false;
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -110,11 +122,6 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
     } finally {
       setIsProcessingSTT(false);
     }
-  };
-
-  const handleToggleMic = () => {
-    if (isListening) stopRecording();
-    else startRecording();
   };
 
   const handleTranslate = async (textToTranslate) => {
@@ -170,14 +177,14 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
     }
   };
 
-  // Long press handlers
-  const handleTouchStart = (id) => {
+  // Long press handlers for history items
+  const handleTouchStartHistory = (id) => {
     longPressTimer.current = setTimeout(() => {
       setLongPressId(id);
     }, 600);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEndHistory = () => {
     clearTimeout(longPressTimer.current);
   };
 
@@ -224,9 +231,19 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
         </p>
         <button
           className={`${styles.voiceFab} ${isListening ? styles.listening : ''}`}
-          onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-          onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
-          onTouchCancel={(e) => { e.preventDefault(); stopRecording(); }}
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            startRecording();
+          }}
+          onPointerUp={(e) => {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            stopRecording();
+          }}
+          onPointerCancel={(e) => {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            stopRecording();
+          }}
+          onContextMenu={(e) => e.preventDefault()}
           disabled={isLoading || isProcessingSTT}
           aria-label="Speak message"
         >
@@ -276,9 +293,9 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
               <div
                 key={item.id}
                 className={`${styles.historyItem} ${longPressId === item.id ? styles.longPressed : ''}`}
-                onTouchStart={() => handleTouchStart(item.id)}
-                onTouchEnd={handleTouchEnd}
-                onTouchCancel={handleTouchEnd}
+                onTouchStart={() => handleTouchStartHistory(item.id)}
+                onTouchEnd={handleTouchEndHistory}
+                onTouchCancel={handleTouchEndHistory}
                 onContextMenu={(e) => { e.preventDefault(); setLongPressId(item.id); }}
               >
                 {longPressId === item.id ? (
