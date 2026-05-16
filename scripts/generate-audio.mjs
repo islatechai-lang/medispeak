@@ -28,7 +28,7 @@ if (!API_KEY) {
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 // ─── Data ───────────────────────────────────────────────────
-const LANGUAGES = ['tl', 'ceb', 'ilo', 'war'];
+const LANGUAGES = ['en', 'tl', 'ceb', 'ilo', 'war'];
 
 const EMERGENCY_PHRASES = [
   { id: 'emg_1', tl: 'Maging kalmado po kayo.', ceb: 'Pagkalma lang po.', ilo: 'Agkalma ka.', war: 'Pagkalma la.' },

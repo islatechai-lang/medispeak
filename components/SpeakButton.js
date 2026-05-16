@@ -127,7 +127,7 @@ export default function SpeakButton({ text, langCode = 'en', size = 'md', label,
     }
 
     // 2) Try pre-generated audio file from server
-    if (audioId && langCode !== 'en') {
+    if (audioId) {
       const fileUrl = `/audio/${langCode}/${audioId}.wav`;
       try {
         const res = await fetch(fileUrl);
