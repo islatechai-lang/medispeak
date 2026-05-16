@@ -210,7 +210,12 @@ export default function PhrasesScreen({ targetLang }) {
                   <p className={styles.phraseTl}>{phrase[targetLang] || phrase.en}</p>
                 </div>
                 <div className={styles.phraseActions}>
-                  <SpeakButton text={phrase[targetLang] || phrase.en} langCode={targetLang} size="sm" />
+                  <SpeakButton 
+                    text={phrase[targetLang] || phrase.en} 
+                    langCode={targetLang} 
+                    size="sm" 
+                    audioId={!phrase.isCustom ? `phrases/${phrase.id}` : undefined}
+                  />
                   <button
                     className={`${styles.pinBtn} ${pinned.includes(phrase.id) ? styles.pinActive : ''}`}
                     onClick={() => togglePin(phrase.id)}
