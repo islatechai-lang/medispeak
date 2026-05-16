@@ -36,7 +36,7 @@ function addWavHeader(pcmData, sampleRate = 24000, numChannels = 1, bitsPerSampl
 }
 
 async function main() {
-  const text = 'Palihug kalma.';
+  const text = 'Palihug pagkalma.';
   const outputPath = join(AUDIO_DIR, 'ceb', 'phrases', '1.wav');
   
   console.log(`🎙 Regenerating: "${text}" -> ${outputPath}`);
