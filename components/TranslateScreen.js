@@ -36,7 +36,7 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
     setToast({ show: true, message });
   }, []);
 
-  const startRecording = useCallback(async () => {
+  const startRecording = async () => {
     if (isPressingRef.current) return;
     isPressingRef.current = true;
     setError('');
@@ -83,9 +83,9 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
       setError('Could not access microphone. Please check permissions.');
       isPressingRef.current = false;
     }
-  }, [sourceLang]);
+  };
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = () => {
     isPressingRef.current = false;
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
@@ -95,7 +95,7 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
       streamRef.current = null;
     }
     setIsListening(false);
-  }, []);
+  };
 
   const processAudio = async (audioBlob) => {
     setIsProcessingSTT(true);
