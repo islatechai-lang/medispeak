@@ -5,7 +5,7 @@ import { LANGUAGES } from '@/lib/languages';
 import { IconSun, IconMoon, IconSwap, IconChevronDown } from './Icons';
 import styles from './Header.module.css';
 
-function LangPicker({ value, onChange, label }) {
+function LangPicker({ value, onChange, label, disabledOptions = [] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const selected = LANGUAGES.find(l => l.code === value) || LANGUAGES[0];
@@ -33,17 +33,27 @@ function LangPicker({ value, onChange, label }) {
 
       {open && (
         <div className={styles.langDropdown}>
-          {LANGUAGES.map(l => (
-            <button
-              key={l.code}
-              className={`${styles.langOption} ${l.code === value ? styles.langOptionActive : ''}`}
-              onClick={() => { onChange(l.code); setOpen(false); }}
-            >
-              <span className={styles.langOptFlag}>{l.flag}</span>
-              <span className={styles.langOptName}>{l.name}</span>
-              {l.code === value && <span className={styles.langOptCheck}>✓</span>}
-            </button>
-          ))}
+          {LANGUAGES.map(l => {
+            const isDisabled = disabledOptions.includes(l.code);
+            return (
+              <button
+                key={l.code}
+                className={`${styles.langOption} ${l.code === value ? styles.langOptionActive : ''} ${isDisabled ? styles.langOptionDisabled : ''}`}
+                onClick={() => { 
+                  if (!isDisabled) {
+                    onChange(l.code); 
+                    setOpen(false); 
+                  }
+                }}
+                disabled={isDisabled}
+                title={isDisabled ? "Voice input not supported yet" : ""}
+              >
+                <span className={styles.langOptFlag}>{l.flag}</span>
+                <span className={styles.langOptName}>{l.name}</span>
+                {l.code === value && <span className={styles.langOptCheck}>✓</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -87,9 +97,20 @@ export default function Header({ sourceLang, targetLang, onSourceChange, onTarge
 
       {showFullLangBar ? (
         <div className={styles.langBar}>
-          <LangPicker value={sourceLang} onChange={onSourceChange} label="Source language" />
+          <LangPicker 
+            value={sourceLang} 
+            onChange={onSourceChange} 
+            label="Source language" 
+            disabledOptions={['ceb', 'ilo', 'war']} 
+          />
 
-          <button className={styles.swapBtn} onClick={handleSwap} aria-label="Swap languages">
+          <button 
+            className={styles.swapBtn} 
+            onClick={handleSwap} 
+            aria-label="Swap languages"
+            disabled={['ceb', 'ilo', 'war'].includes(targetLang)}
+            title={['ceb', 'ilo', 'war'].includes(targetLang) ? "Cannot swap: Patient language not supported for voice input" : "Swap languages"}
+          >
             <IconSwap size={16} />
           </button>
 

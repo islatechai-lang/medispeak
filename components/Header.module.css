@@ -139,9 +139,16 @@
   flex-shrink: 0;
 }
 
-.swapBtn:hover {
+.swapBtn:hover:not(:disabled) {
   background: var(--primary-muted);
   transform: rotate(180deg);
+}
+
+.swapBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--bg-surface);
+  color: var(--text-muted);
 }
 
 .langBarSimple {
@@ -257,6 +264,16 @@
 
 .langOptionActive:hover {
   background: var(--primary-muted);
+}
+
+.langOptionDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.langOptionDisabled:hover {
+  background: transparent;
 }
 
 .langOptFlag {
