@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getLangName } from '@/lib/languages';
 import { useIndexedDB } from '@/lib/useIndexedDB';
-import { IconCopy, IconTrash } from './Icons';
+import { IconCopy, IconTrash, IconMicrophone, IconStop } from './Icons';
 import SpeakButton from './SpeakButton';
 import LoadingSpinner from './LoadingSpinner';
 import Toast from './Toast';
@@ -12,10 +12,16 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
   const [inputText, setInputText] = useState('');
   const [translation, setTranslation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessingSTT, setIsProcessingSTT] = useState(false);
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);
   const [longPressId, setLongPressId] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '' });
+  
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
   const longPressTimer = useRef(null);
   const { addRecentTranslation, getRecentTranslations, deleteRecentTranslation } = useIndexedDB();
 
@@ -29,8 +35,91 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
     setToast({ show: true, message });
   }, []);
 
-  const handleTranslate = async () => {
-    if (!inputText.trim()) return;
+  const startRecording = useCallback(async () => {
+    setError('');
+    chunksRef.current = [];
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          channelCount: 1, 
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+        } 
+      });
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+          ? 'audio/webm;codecs=opus' 
+          : 'audio/webm',
+      });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        await processAudio(audioBlob);
+      };
+
+      mediaRecorder.start(250);
+      setIsListening(true);
+    } catch (err) {
+      console.error('Mic error:', err);
+      setError('Could not access microphone. Please allow microphone permission.');
+    }
+  }, [sourceLang]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setIsListening(false);
+  }, []);
+
+  const processAudio = async (audioBlob) => {
+    setIsProcessingSTT(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('language', sourceLang);
+
+      const res = await fetch('/api/stt', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('STT failed');
+
+      const data = await res.json();
+      
+      if (data.transcript) {
+        setInputText(data.transcript);
+        // Automatically trigger translation after voice input
+        handleTranslate(data.transcript);
+      } else {
+        setError('No speech detected. Please try again.');
+      }
+    } catch (err) {
+      console.error('STT error:', err);
+      setError('Speech recognition failed. Please try again.');
+    } finally {
+      setIsProcessingSTT(false);
+    }
+  };
+
+  const handleToggleMic = () => {
+    if (isListening) stopRecording();
+    else startRecording();
+  };
+
+  const handleTranslate = async (textToTranslate) => {
+    const text = typeof textToTranslate === 'string' ? textToTranslate : inputText;
+    if (!text.trim()) return;
     setIsLoading(true);
     setError('');
 
@@ -39,7 +128,7 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: inputText.trim(),
+          text: text.trim(),
           sourceLang,
           targetLang,
           context: 'nurse-patient communication in a healthcare setting',
@@ -52,7 +141,7 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
       setTranslation(data);
 
       const record = {
-        input: inputText.trim(),
+        input: text.trim(),
         output: data.translation,
         from: sourceLang,
         to: targetLang
@@ -106,14 +195,24 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
       <div className={styles.inputCard}>
         <div className={styles.cardHeader}>
           <span className={styles.langTag}>{getLangName(sourceLang)}</span>
+          <button
+            className={`${styles.voiceBtn} ${isListening ? styles.listening : ''}`}
+            onClick={handleToggleMic}
+            disabled={isLoading || isProcessingSTT}
+            title={isListening ? 'Stop recording' : 'Speak message'}
+          >
+            {isListening ? <IconStop size={18} /> : <IconMicrophone size={18} />}
+            {isListening && <span className={styles.pulse}></span>}
+          </button>
         </div>
         <textarea
           className={styles.textarea}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type nursing instruction or message..."
+          placeholder={isListening ? 'Listening...' : 'Type or tap mic to speak...'}
           rows={3}
+          disabled={isListening}
           aria-label="Text to translate"
         />
         <div className={styles.inputActions}>
@@ -121,16 +220,19 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
           <button
             className={styles.translateBtn}
             onClick={handleTranslate}
-            disabled={!inputText.trim() || isLoading}
+            disabled={!inputText.trim() || isLoading || isListening || isProcessingSTT}
           >
             {isLoading ? 'Translating...' : 'Translate'}
           </button>
         </div>
       </div>
 
-      {isLoading && (
+      {(isLoading || isProcessingSTT) && (
         <div className={styles.loadingWrap}>
-          <LoadingSpinner size="md" text="Translating with AI..." />
+          <LoadingSpinner 
+            size="md" 
+            text={isProcessingSTT ? 'Converting voice to text...' : 'Translating with AI...'} 
+          />
         </div>
       )}
 

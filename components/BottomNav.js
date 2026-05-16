@@ -4,7 +4,6 @@ import styles from './BottomNav.module.css';
 
 const TABS = [
   { id: 'translate', icon: IconTranslate, label: 'Translate' },
-  { id: 'voice', icon: IconMicrophone, label: 'Voice' },
   { id: 'symptoms', icon: IconStethoscope, label: 'Symptoms' },
   { id: 'phrases', icon: IconZap, label: 'Phrases' },
   { id: 'education', icon: IconBook, label: 'Learn' },

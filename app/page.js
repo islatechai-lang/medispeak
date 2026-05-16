@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import TranslateScreen from '@/components/TranslateScreen';
-import VoiceScreen from '@/components/VoiceScreen';
 import SymptomsScreen from '@/components/SymptomsScreen';
 import PhrasesScreen from '@/components/PhrasesScreen';
 import EducationScreen from '@/components/EducationScreen';
@@ -116,8 +115,6 @@ export default function Home() {
     switch (activeTab) {
       case 'translate':
         return <TranslateScreen sourceLang={sourceLang} targetLang={targetLang} />;
-      case 'voice':
-        return <VoiceScreen sourceLang={sourceLang} targetLang={targetLang} />;
       case 'symptoms':
         return <SymptomsScreen targetLang={targetLang} />;
       case 'phrases':
