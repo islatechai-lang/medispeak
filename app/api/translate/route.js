@@ -41,7 +41,7 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
 {"translation": "the translated text here in ${tgt}", "pronunciation": "${isTargetEnglish ? "" : "simple pronunciation guide here"}"}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite',
+      model: 'gemini-flash-lite-latest',
       contents: prompt,
     });
 
