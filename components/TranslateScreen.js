@@ -197,9 +197,13 @@ export default function TranslateScreen({ sourceLang, targetLang }) {
           <span className={styles.langTag}>{getLangName(sourceLang)}</span>
           <button
             className={`${styles.voiceBtn} ${isListening ? styles.listening : ''}`}
-            onClick={handleToggleMic}
+            onMouseDown={startRecording}
+            onMouseUp={stopRecording}
+            onMouseLeave={isListening ? stopRecording : undefined}
+            onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+            onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
             disabled={isLoading || isProcessingSTT}
-            title={isListening ? 'Stop recording' : 'Speak message'}
+            title="Press and hold to speak"
           >
             {isListening ? <IconStop size={18} /> : <IconMicrophone size={18} />}
             {isListening && <span className={styles.pulse}></span>}
