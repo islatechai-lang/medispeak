@@ -23,23 +23,23 @@ export async function POST(request) {
     const src = langNames[sourceLang] || sourceLang;
     const tgt = langNames[targetLang] || targetLang;
 
-    const prompt = `You are a professional medical translator for healthcare settings in the Philippines. Translate the following ${src} text into ${tgt}. 
+    const prompt = `You are an expert medical translator. Your task is to translate the given ${src} text into natural, accurate ${tgt}.
 
-Rules:
-- Provide an accurate, natural-sounding translation appropriate for nurse-patient communication
-- Keep medical terms clear and understandable for patients
-- Be culturally sensitive and respectful
-- If the text contains medical instructions, ensure clarity and safety
-${context ? `- Context: ${context}` : ''}
+CRITICAL RULES:
+1. You MUST translate the text into ${tgt}. Do not leave it in ${src}.
+2. Provide an accurate, natural-sounding translation appropriate for nurse-patient communication.
+3. Keep medical terms clear and understandable for patients.
+4. If the text contains medical instructions, ensure clarity and safety.
+${context ? `5. Context: ${context}` : ''}
 
 Text to translate:
 "${text}"
 
 Respond with ONLY a JSON object in this exact format (no markdown, no code blocks):
-{"translation": "the translated text here", "pronunciation": "simple pronunciation guide here"}`;
+{"translation": "the translated text here in ${tgt}", "pronunciation": "simple pronunciation guide here"}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
 
